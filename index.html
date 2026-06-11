@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>決戰中途島 — THE BATTLE OF MIDWAY 1942</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Serif+TC:wght@600;900&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#d8b35a; --gold-dim:#9a7f3e;
+  --us:#3da5ff; --us-deep:#1565c0;
+  --jp:#ff4646; --jp-deep:#b71c1c;
+  --ink:#0a1320; --panel:rgba(7,15,26,.82); --panel-line:rgba(216,179,90,.35);
+  --txt:#e8e2d2; --txt-dim:#9aa3ad;
+  --font-disp:'Bebas Neue','Noto Serif TC',serif;
+  --font-zh:'Noto Serif TC',serif;
+  --font-body:'Noto Sans TC',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#04090f;color:var(--txt);font-family:var(--font-body)}
+#c3d{position:fixed;inset:0;display:block;cursor:grab}
+#c3d:active{cursor:grabbing}
+
+/* ---- film grain + vignette + scanline atmosphere ---- */
+#vignette{position:fixed;inset:0;pointer-events:none;z-index:5;
+  background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%)}
+#grain{position:fixed;inset:-100px;pointer-events:none;z-index:6;opacity:.07;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain .42s steps(3) infinite}
+@keyframes grain{0%{transform:translate(0,0)}33%{transform:translate(-30px,18px)}66%{transform:translate(22px,-26px)}100%{transform:translate(0,0)}}
+
+/* ---- screen-space 3D labels (constant pixel size at any camera range) ---- */
+#labels{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;
+  font-family:var(--font-body);text-shadow:0 1px 3px rgba(0,0,0,.95);will-change:left,top}
+.lbl.ship{font-size:11px;color:#fff;font-weight:500;letter-spacing:.04em}
+.lbl.fleet{font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:2px;
+  background:rgba(6,12,20,.74);letter-spacing:.05em;backdrop-filter:blur(2px)}
+.lbl.fleet.us{color:#9fd2ff;border:1px solid rgba(61,165,255,.55)}
+.lbl.fleet.jp{color:#ffb3a8;border:1px solid rgba(255,70,70,.55)}
+.lbl.place{font-family:var(--font-mono);font-size:11px;color:#c9b988;letter-spacing:.18em}
+.lbl.place.major{font-family:var(--font-zh);font-size:17px;font-weight:900;color:#ffe9b0;letter-spacing:.22em}
+.lbl.place.pl{color:#7fc4ff;border:1px solid rgba(61,165,255,.5);background:rgba(7,20,35,.7);padding:2px 8px;border-radius:2px}
+.lbl.place.dim{color:#88929e}
+.lbl.sunk{font-size:11px;font-weight:700;opacity:.8}
+
+/* ---- cinematic letterbox ---- */
+.bar{position:fixed;left:0;right:0;height:0;background:#000;z-index:8;transition:height 1.2s cubic-bezier(.7,0,.3,1)}
+#barTop{top:0}#barBot{bottom:0}
+body.cine .bar{height:7vh}
+
+/* ---- HUD chrome corners ---- */
+.hud-corner{position:fixed;width:34px;height:34px;z-index:9;pointer-events:none;opacity:.75}
+.hud-corner::before,.hud-corner::after{content:"";position:absolute;background:var(--gold)}
+.hud-corner::before{width:100%;height:2px}.hud-corner::after{width:2px;height:100%}
+#hcTL{top:10px;left:10px}#hcTR{top:10px;right:10px;transform:scaleX(-1)}
+#hcBL{bottom:10px;left:10px;transform:scaleY(-1)}#hcBR{bottom:10px;right:10px;transform:scale(-1)}
+
+/* ---- top banner ---- */
+#topbar{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;align-items:flex-start;
+  justify-content:space-between;padding:16px 22px;pointer-events:none}
+#brand{pointer-events:auto}
+#brand .kicker{font-family:var(--font-mono);font-size:10px;letter-spacing:.35em;color:var(--gold);text-transform:uppercase}
+#brand h1{font-family:var(--font-disp);font-size:clamp(22px,3.2vw,40px);letter-spacing:.06em;line-height:1;
+  color:var(--txt);text-shadow:0 2px 18px rgba(0,0,0,.8)}
+#brand h1 .zh{font-family:var(--font-zh);font-weight:900;letter-spacing:.12em}
+#brand .sub{font-family:var(--font-mono);font-size:11px;color:var(--txt-dim);letter-spacing:.18em;margin-top:2px}
+#clock{pointer-events:auto;text-align:right;background:var(--panel);border:1px solid var(--panel-line);
+  padding:8px 14px;border-radius:3px;backdrop-filter:blur(6px)}
+#clock .date{font-family:var(--font-mono);font-size:12px;color:var(--gold);letter-spacing:.2em}
+#clock .time{font-family:var(--font-disp);font-size:34px;line-height:1;color:#fff;letter-spacing:.08em}
+#clock .wx{font-family:var(--font-mono);font-size:10px;color:var(--txt-dim);letter-spacing:.12em;margin-top:3px}
+#clock .live{display:inline-block;font-family:var(--font-mono);font-size:9px;letter-spacing:.25em;color:#fff;
+  background:var(--jp-deep);padding:2px 7px;border-radius:2px;margin-bottom:4px;animation:blink 1.6s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.45}}
+
+/* ---- language toggle ---- */
+#langBtn{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:12;
+  font-family:var(--font-mono);font-size:12px;letter-spacing:.18em;color:var(--ink);
+  background:var(--gold);border:none;padding:7px 18px;border-radius:2px;cursor:pointer;font-weight:600;
+  box-shadow:0 0 18px rgba(216,179,90,.35);transition:transform .15s}
+#langBtn:hover{transform:translateX(-50%) scale(1.06)}
+
+/* ---- left: order of battle panel ---- */
+#forces{position:fixed;left:14px;top:108px;z-index:10;width:236px;max-height:calc(100vh - 280px);
+  overflow-y:auto;background:var(--panel);border:1px solid var(--panel-line);border-radius:4px;
+  backdrop-filter:blur(8px);padding:10px 12px;scrollbar-width:thin;transition:transform .5s,opacity .5s}
+body.cine #forces{transform:translateX(-115%);opacity:0}
+#forces h3{font-family:var(--font-mono);font-size:10px;letter-spacing:.3em;color:var(--gold);
+  text-transform:uppercase;border-bottom:1px solid var(--panel-line);padding-bottom:6px;margin-bottom:8px}
+.side-h{display:flex;align-items:center;gap:7px;margin:9px 0 5px;font-size:12px;font-weight:700;letter-spacing:.08em}
+.side-h .flagchip{width:22px;height:14px;border-radius:1px;flex:none;box-shadow:0 0 6px rgba(0,0,0,.6)}
+.side-h.us{color:var(--us)}.side-h.jp{color:var(--jp)}
+.shiprow{display:flex;align-items:center;gap:6px;font-size:11px;padding:2.5px 0;cursor:pointer;border-radius:2px}
+.shiprow:hover{background:rgba(216,179,90,.1)}
+.shiprow .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt)}
+.shiprow .st{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.06em;padding:1px 5px;border-radius:2px;flex:none}
+.st.ok{color:#7fd98a;border:1px solid #2e5a35}
+.st.dmg{color:#ffc04d;border:1px solid #6b5320}
+.st.fire{color:#ff7a45;border:1px solid #7a3214;animation:blink 1.2s infinite}
+.st.sink{color:#ff4646;border:1px solid #7a1a1a;animation:blink .8s infinite}
+.st.sunk{color:#777;border:1px solid #444;text-decoration:line-through}
+.hpbar{width:46px;height:5px;background:#1c2733;border-radius:3px;overflow:hidden;flex:none}
+.hpbar i{display:block;height:100%;border-radius:3px;transition:width .8s}
+.shiprow.us .hpbar i{background:linear-gradient(90deg,#1565c0,#4dabff)}
+.shiprow.jp .hpbar i{background:linear-gradient(90deg,#b71c1c,#ff6b5e)}
+.airrow{font-family:var(--font-mono);font-size:9.5px;color:var(--txt-dim);letter-spacing:.05em;margin-top:3px}
+.airrow b{color:var(--txt)}
+
+/* ---- narration subtitle bar ---- */
+#subt{position:fixed;left:50%;bottom:122px;transform:translateX(-50%);z-index:11;max-width:min(780px,92vw);
+  text-align:center;pointer-events:none;transition:opacity .4s}
+#subt.off{opacity:0}
+#subt .k{font-family:var(--font-mono);font-size:9px;letter-spacing:.45em;color:var(--gold);display:block;margin-bottom:4px;text-shadow:0 1px 4px #000}
+#subt .tx{display:inline-block;background:rgba(4,8,14,.74);padding:7px 20px;border-radius:3px;font-size:15px;
+  color:#fff;line-height:1.6;text-shadow:0 1px 4px #000;letter-spacing:.05em;backdrop-filter:blur(4px)}
+
+/* ---- event banner (TV lower-third) ---- */
+#eventCard{position:fixed;left:50%;bottom:186px;transform:translateX(-50%) translateY(30px);z-index:11;
+  width:min(680px,92vw);opacity:0;pointer-events:none;transition:opacity .5s,transform .5s}
+#eventCard.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+#eventCard .strip{display:flex;align-items:stretch;background:var(--panel);border:1px solid var(--panel-line);
+  border-left:4px solid var(--gold);border-radius:3px;backdrop-filter:blur(10px);overflow:hidden;
+  box-shadow:0 10px 40px rgba(0,0,0,.6)}
+#eventCard .tcol{flex:none;display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:10px 14px;background:rgba(216,179,90,.1);border-right:1px solid var(--panel-line);min-width:88px}
+#eventCard .tcol .d{font-family:var(--font-mono);font-size:10px;color:var(--gold);letter-spacing:.15em}
+#eventCard .tcol .t{font-family:var(--font-disp);font-size:30px;color:#fff;line-height:1}
+#eventCard .body{padding:10px 16px 12px;flex:1;min-width:0}
+#eventCard .etitle{font-family:var(--font-zh);font-weight:900;font-size:19px;letter-spacing:.04em;color:#fff;line-height:1.25}
+#eventCard .etitle .tag{display:inline-block;vertical-align:3px;font-family:var(--font-mono);font-size:9px;
+  letter-spacing:.2em;padding:2px 7px;border-radius:2px;margin-right:8px}
+.tag.battle{background:var(--jp-deep);color:#fff}
+.tag.strategy{background:var(--gold);color:var(--ink)}
+.tag.intel{background:var(--us-deep);color:#fff}
+.tag.info{background:#3a4654;color:#fff}
+#eventCard .edesc{font-size:12.5px;color:var(--txt-dim);line-height:1.55;margin-top:4px}
+#eventCard .ecmd{font-family:var(--font-mono);font-size:10px;color:var(--gold);letter-spacing:.12em;margin-top:5px}
+
+/* ---- strategy flash ---- */
+#stratFlash{position:fixed;inset:0;z-index:14;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;opacity:0;transition:opacity .35s}
+#stratFlash.show{opacity:1}
+#stratFlash .inner{text-align:center;transform:scale(.92);transition:transform .6s cubic-bezier(.2,1.4,.3,1)}
+#stratFlash.show .inner{transform:scale(1)}
+#stratFlash .label{font-family:var(--font-mono);font-size:12px;letter-spacing:.6em;color:var(--gold);text-transform:uppercase}
+#stratFlash .name{font-family:var(--font-zh);font-weight:900;font-size:clamp(34px,6vw,72px);letter-spacing:.16em;
+  color:#fff;text-shadow:0 0 40px rgba(216,179,90,.9),0 0 90px rgba(216,179,90,.5)}
+#stratFlash .rule{width:240px;height:1px;margin:10px auto;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+#stratFlash .eff{font-size:14px;color:var(--gold);letter-spacing:.2em}
+
+/* ---- bottom control deck ---- */
+#deck{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:12;width:min(900px,95vw);
+  background:var(--panel);border:1px solid var(--panel-line);border-radius:5px;backdrop-filter:blur(10px);
+  padding:9px 14px 11px;transition:transform .5s}
+#timeline{position:relative;height:26px;cursor:pointer;margin-bottom:7px}
+#tlTrack{position:absolute;left:0;right:0;top:11px;height:4px;background:#1c2733;border-radius:2px}
+#tlFill{position:absolute;left:0;top:11px;height:4px;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:2px;width:0}
+#tlHead{position:absolute;top:4px;width:2px;height:18px;background:#fff;box-shadow:0 0 8px var(--gold);left:0}
+.tlTick{position:absolute;top:8px;width:7px;height:7px;border-radius:50%;transform:translateX(-50%);
+  border:1.5px solid var(--ink);transition:transform .2s;cursor:pointer}
+.tlTick:hover{transform:translateX(-50%) scale(1.7)}
+.tlTick.battle{background:var(--jp)}.tlTick.strategy{background:var(--gold)}.tlTick.intel{background:var(--us)}.tlTick.info{background:#7d8a99}
+.tlTick.passed{opacity:.35}
+.tlDay{position:absolute;top:-9px;font-family:var(--font-mono);font-size:8.5px;color:var(--txt-dim);letter-spacing:.1em;transform:translateX(-50%)}
+#deckrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dbtn{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;color:var(--txt);background:#16222f;
+  border:1px solid #2c3b4c;padding:6px 12px;border-radius:3px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.dbtn:hover{border-color:var(--gold);color:var(--gold)}
+.dbtn.on{background:var(--gold);color:var(--ink);border-color:var(--gold);font-weight:600}
+#playBtn{font-size:15px;padding:5px 16px}
+.dsep{width:1px;height:22px;background:#2c3b4c;flex:none}
+#deck .hint{margin-left:auto;font-family:var(--font-mono);font-size:9.5px;color:var(--txt-dim);letter-spacing:.08em}
+
+/* ---- legend ---- */
+#legend{position:fixed;right:14px;top:108px;z-index:10;background:var(--panel);border:1px solid var(--panel-line);
+  border-radius:4px;backdrop-filter:blur(8px);padding:10px 13px;width:188px;font-size:11px;transition:transform .5s,opacity .5s}
+body.cine #legend{transform:translateX(115%);opacity:0}
+#legend h3{font-family:var(--font-mono);font-size:10px;letter-spacing:.3em;color:var(--gold);text-transform:uppercase;
+  border-bottom:1px solid var(--panel-line);padding-bottom:6px;margin-bottom:8px}
+.lg{display:flex;align-items:center;gap:8px;padding:2.5px 0;color:var(--txt-dim)}
+.lg .sw{width:14px;height:14px;flex:none;display:flex;align-items:center;justify-content:center}
+.lg .dot{width:9px;height:9px;border-radius:50%}
+.lg .tri{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid currentColor}
+
+/* ---- ship detail popup ---- */
+#shipCard{position:fixed;z-index:13;width:248px;background:var(--panel);border:1px solid var(--panel-line);
+  border-radius:4px;backdrop-filter:blur(10px);padding:12px 14px;display:none;box-shadow:0 12px 40px rgba(0,0,0,.7)}
+#shipCard.show{display:block}
+#shipCard .cls{font-family:var(--font-mono);font-size:9px;letter-spacing:.25em;text-transform:uppercase}
+#shipCard h4{font-family:var(--font-zh);font-weight:900;font-size:20px;color:#fff;margin:2px 0 6px}
+#shipCard .row{display:flex;justify-content:space-between;font-size:11px;color:var(--txt-dim);padding:2px 0}
+#shipCard .row b{color:var(--txt);font-weight:500}
+#shipCard .closex{position:absolute;top:6px;right:9px;cursor:pointer;color:var(--txt-dim);font-size:14px}
+#shipCard .closex:hover{color:var(--gold)}
+#shipCard .bighp{height:7px;background:#1c2733;border-radius:4px;margin-top:8px;overflow:hidden}
+#shipCard .bighp i{display:block;height:100%;transition:width .5s}
+
+/* ---- intro overlay ---- */
+#intro{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 40%,#0d1d31 0%,#04090f 70%);transition:opacity 1s;text-align:center;padding:20px}
+#intro.gone{opacity:0;pointer-events:none}
+#intro .kicker{font-family:var(--font-mono);font-size:12px;letter-spacing:.55em;color:var(--gold);
+  text-transform:uppercase;animation:fadeUp 1s .2s both}
+#intro h1{font-family:var(--font-zh);font-weight:900;font-size:clamp(44px,9vw,110px);letter-spacing:.18em;
+  color:#fff;text-shadow:0 0 60px rgba(61,165,255,.4);margin:14px 0 4px;animation:fadeUp 1s .5s both}
+#intro h2{font-family:var(--font-disp);font-size:clamp(20px,3.4vw,38px);letter-spacing:.32em;color:var(--gold);
+  animation:fadeUp 1s .8s both}
+#intro .tagline{font-size:14px;color:var(--txt-dim);letter-spacing:.12em;margin:22px 0 36px;max-width:560px;
+  line-height:1.8;animation:fadeUp 1s 1.1s both}
+#intro .btns{display:flex;gap:16px;animation:fadeUp 1s 1.4s both;flex-wrap:wrap;justify-content:center}
+.bigbtn{font-family:var(--font-body);font-size:15px;letter-spacing:.18em;padding:13px 34px;border-radius:3px;
+  cursor:pointer;transition:all .2s;font-weight:700}
+.bigbtn.gold{background:var(--gold);color:var(--ink);border:1px solid var(--gold)}
+.bigbtn.gold:hover{box-shadow:0 0 30px rgba(216,179,90,.55);transform:translateY(-2px)}
+.bigbtn.ghost{background:transparent;color:var(--txt);border:1px solid #3a4a5c}
+.bigbtn.ghost:hover{border-color:var(--gold);color:var(--gold)}
+#intro .flags{display:flex;gap:26px;align-items:center;margin-top:44px;animation:fadeUp 1s 1.7s both}
+#intro .flags .vs{font-family:var(--font-disp);font-size:26px;color:var(--txt-dim);letter-spacing:.1em}
+#intro .flagbox{text-align:center}
+#intro .flagbox canvas{width:84px;height:56px;border-radius:2px;box-shadow:0 6px 24px rgba(0,0,0,.6)}
+#intro .flagbox .fn{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;margin-top:7px}
+#intro .flagbox.us .fn{color:var(--us)}#intro .flagbox.jp .fn{color:var(--jp)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+/* ---- outcome panel ---- */
+#outcome{position:fixed;inset:0;z-index:15;display:none;align-items:center;justify-content:center;
+  background:rgba(2,6,12,.78);backdrop-filter:blur(6px)}
+#outcome.show{display:flex}
+#outcome .box{width:min(640px,92vw);background:var(--panel);border:1px solid var(--panel-line);border-radius:6px;
+  padding:30px 36px;text-align:center;box-shadow:0 30px 90px rgba(0,0,0,.8)}
+#outcome .kicker{font-family:var(--font-mono);font-size:11px;letter-spacing:.5em;color:var(--gold);text-transform:uppercase}
+#outcome h2{font-family:var(--font-zh);font-weight:900;font-size:38px;color:#fff;margin:10px 0 18px;letter-spacing:.1em}
+#outcome .cols{display:flex;gap:18px;text-align:left;margin-bottom:20px}
+#outcome .col{flex:1;border-top:3px solid;padding-top:10px}
+#outcome .col.us{border-color:var(--us)}#outcome .col.jp{border-color:var(--jp)}
+#outcome .col h5{font-size:14px;margin-bottom:8px;letter-spacing:.1em}
+#outcome .col.us h5{color:var(--us)}#outcome .col.jp h5{color:var(--jp)}
+#outcome .col li{font-size:12px;color:var(--txt-dim);line-height:1.8;list-style:none}
+#outcome p{font-size:13px;color:var(--txt-dim);line-height:1.8;margin-bottom:22px}
+
+/* mobile */
+@media(max-width:760px){
+  #forces{width:190px;top:96px}#legend{display:none}
+  #clock .time{font-size:24px}#brand h1{font-size:20px}
+  #eventCard{bottom:196px}#subt{bottom:132px}#subt .tx{font-size:13px}
+}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:#2c3b4c;border-radius:3px}
+</style>
+</head>
+<body>
+<canvas id="c3d"></canvas>
+<div id="labels"></div>
+<div id="vignette"></div><div id="grain"></div>
+<div class="bar" id="barTop"></div><div class="bar" id="barBot"></div>
+<div class="hud-corner" id="hcTL"></div><div class="hud-corner" id="hcTR"></div>
+<div class="hud-corner" id="hcBL"></div><div class="hud-corner" id="hcBR"></div>
+
+<button id="langBtn">EN / 中文</button>
+
+<div id="topbar">
+  <div id="brand">
+    <div class="kicker" data-i18n="kicker"></div>
+    <h1><span class="zh" data-i18n="title"></span></h1>
+    <div class="sub" data-i18n="subtitle"></div>
+  </div>
+  <div id="clock">
+    <span class="live" data-i18n="live"></span><br>
+    <span class="date" id="clkDate">JUNE 3 1942</span>
+    <div class="time" id="clkTime">00:00</div>
+    <div class="wx" id="clkWx"></div>
+  </div>
+</div>
+
+<div id="forces">
+  <h3 data-i18n="oob"></h3>
+  <div id="forcesUS"></div>
+  <div id="forcesJP"></div>
+</div>
+
+<div id="legend">
+  <h3 data-i18n="legend"></h3>
+  <div class="lg"><span class="sw"><span class="dot" style="background:var(--us)"></span></span><span data-i18n="lgUS"></span></div>
+  <div class="lg"><span class="sw"><span class="dot" style="background:var(--jp)"></span></span><span data-i18n="lgJP"></span></div>
+  <div class="lg" style="color:var(--us)"><span class="sw"><span class="tri"></span></span><span style="color:var(--txt-dim)" data-i18n="lgAirUS"></span></div>
+  <div class="lg" style="color:var(--jp)"><span class="sw"><span class="tri"></span></span><span style="color:var(--txt-dim)" data-i18n="lgAirJP"></span></div>
+  <div class="lg"><span class="sw">⟶</span><span data-i18n="lgHeading"></span></div>
+  <div class="lg"><span class="sw">✕</span><span data-i18n="lgSunk"></span></div>
+  <div class="lg"><span class="sw">☁</span><span data-i18n="lgCloud"></span></div>
+  <div class="lg" style="margin-top:6px;border-top:1px solid var(--panel-line);padding-top:7px"><span class="sw">🖱</span><span data-i18n="lgDrag"></span></div>
+  <div class="lg"><span class="sw">⤿</span><span data-i18n="lgZoom"></span></div>
+  <div class="lg"><span class="sw">👆</span><span data-i18n="lgClick"></span></div>
+</div>
+
+<div id="subt"><span class="k" data-i18n="narrK"></span><span class="tx" id="subtText"></span></div>
+
+<div id="eventCard">
+  <div class="strip">
+    <div class="tcol"><div class="d" id="evDate"></div><div class="t" id="evTime"></div></div>
+    <div class="body">
+      <div class="etitle"><span class="tag" id="evTag"></span><span id="evTitle"></span></div>
+      <div class="edesc" id="evDesc"></div>
+      <div class="ecmd" id="evCmd"></div>
+    </div>
+  </div>
+</div>
+
+<div id="stratFlash"><div class="inner">
+  <div class="label" data-i18n="stratLabel"></div>
+  <div class="name" id="sfName"></div>
+  <div class="rule"></div>
+  <div class="eff" id="sfEff"></div>
+</div></div>
+
+<div id="shipCard">
+  <span class="closex" id="scClose">✕</span>
+  <div class="cls" id="scCls"></div>
+  <h4 id="scName"></h4>
+  <div class="row"><span data-i18n="scCmd"></span><b id="scCmdV"></b></div>
+  <div class="row"><span data-i18n="scFleet"></span><b id="scFleetV"></b></div>
+  <div class="row"><span data-i18n="scStatus"></span><b id="scStatusV"></b></div>
+  <div class="row"><span data-i18n="scHP"></span><b id="scHPV"></b></div>
+  <div class="bighp"><i id="scHPBar"></i></div>
+</div>
+
+<div id="deck">
+  <div id="timeline">
+    <div id="tlTrack"></div><div id="tlFill"></div><div id="tlHead"></div>
+    <div id="tlTicks"></div>
+  </div>
+  <div id="deckrow">
+    <button class="dbtn" id="playBtn">▶</button>
+    <span class="dsep"></span>
+    <button class="dbtn spd" data-spd="0.25">1/4×</button>
+    <button class="dbtn spd" data-spd="0.5">1/2×</button>
+    <button class="dbtn spd on" data-spd="1">1×</button>
+    <button class="dbtn spd" data-spd="2">2×</button>
+    <button class="dbtn spd" data-spd="4">4×</button>
+    <span class="dsep"></span>
+    <button class="dbtn on" id="ccBtn" data-i18n="cc"></button>
+    <span class="dsep"></span>
+    <button class="dbtn cam on" id="camCine" data-i18n="camCine"></button>
+    <button class="dbtn cam" id="camFree" data-i18n="camFree"></button>
+    <button class="dbtn cam" id="camTop" data-i18n="camTop"></button>
+    <span class="hint" data-i18n="deckHint"></span>
+    <span style="font-family:var(--font-mono);font-size:9px;color:var(--gold);letter-spacing:.1em">v1.2</span>
+  </div>
+</div>
+
+<div id="intro">
+  <div class="kicker" data-i18n="introKicker"></div>
+  <h1 data-i18n="introTitle"></h1>
+  <h2 data-i18n="introSub"></h2>
+  <div class="tagline" data-i18n="introTag"></div>
+  <div class="btns">
+    <button class="bigbtn gold" id="btnAuto" data-i18n="btnAuto"></button>
+    <button class="bigbtn ghost" id="btnFree" data-i18n="btnFree"></button>
+  </div>
+  <div class="flags">
+    <div class="flagbox us"><canvas id="fcUS" width="168" height="112"></canvas><div class="fn" data-i18n="usnavy"></div></div>
+    <div class="vs">VS</div>
+    <div class="flagbox jp"><canvas id="fcJP" width="168" height="112"></canvas><div class="fn" data-i18n="ijn"></div></div>
+  </div>
+</div>
+
+<div id="outcome"><div class="box">
+  <div class="kicker" data-i18n="outKicker"></div>
+  <h2 data-i18n="outTitle"></h2>
+  <div class="cols">
+    <div class="col us"><h5 data-i18n="outUSh"></h5><ul id="outUSl"></ul></div>
+    <div class="col jp"><h5 data-i18n="outJPh"></h5><ul id="outJPl"></ul></div>
+  </div>
+  <p data-i18n="outText"></p>
+  <button class="bigbtn gold" id="btnReplay" data-i18n="btnReplay"></button>
+  <button class="bigbtn ghost" id="btnExplore" data-i18n="btnExplore"></button>
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+/* ====================================================================
+   THE BATTLE OF MIDWAY — cinematic 3D interactive documentary
+   ==================================================================== */
+
+/* ---------------- i18n ---------------- */
+const I18N = {
+en:{
+  kicker:"WAR IN THE PACIFIC · SPECIAL PRESENTATION",
+  title:"THE BATTLE OF MIDWAY",
+  subtitle:"JUNE 3 – 7, 1942 · CENTRAL PACIFIC",
+  live:"● LIVE RECONSTRUCTION",
+  oob:"ORDER OF BATTLE",
+  legend:"MAP KEY",
+  lgUS:"US Navy task force",lgJP:"IJN fleet",
+  lgAirUS:"US air strike",lgAirJP:"Japanese air strike",
+  lgHeading:"Course / heading",lgSunk:"Ship lost",lgCloud:"Weather front",
+  lgDrag:"Drag to orbit camera",lgZoom:"Scroll to zoom",lgClick:"Click a ship for details",
+  camCine:"⬤ CINEMATIC",camFree:"FREE CAMERA",camTop:"PLOT VIEW",
+  deckHint:"SPACE play/pause · drag timeline to scrub",
+  narrK:"LIVE COMMENTARY",
+  cc:"CC ON",ccOff:"CC OFF",
+  stratLabel:"— TACTICAL DECISION —",
+  scCmd:"Commander",scFleet:"Force",scStatus:"Status",scHP:"Integrity",
+  usnavy:"U.S. PACIFIC FLEET",ijn:"IMPERIAL JAPANESE NAVY",
+  introKicker:"A 3D BATTLE RECONSTRUCTION",
+  introTitle:"MIDWAY",
+  introSub:"THE BATTLE OF MIDWAY · 1942",
+  introTag:"Four days that turned the tide of the Pacific War. Follow every fleet, every strike and every fateful decision — rebuilt in real time on a living 3D ocean.",
+  btnAuto:"▶ PLAY DOCUMENTARY",btnFree:"EXPLORE FREELY",
+  outKicker:"AFTER ACTION REPORT",outTitle:"DECISIVE AMERICAN VICTORY",
+  outUSh:"UNITED STATES — LOSSES",outJPh:"JAPAN — LOSSES",
+  outText:"In five minutes on the morning of June 4, the elite of Japan's carrier force was destroyed. Japan never regained the strategic initiative in the Pacific. Midway is remembered as one of the most decisive naval battles in history.",
+  btnReplay:"⟲ REPLAY",btnExplore:"KEEP EXPLORING",
+  statuses:{ok:"OPERATIONAL",dmg:"DAMAGED",fire:"ON FIRE",sink:"SINKING",sunk:"SUNK"},
+  classes:{cv:"Fleet Carrier",bb:"Battleship",ca:"Heavy Cruiser",dd:"Destroyer",ap:"Transport",ss:"Submarine",base:"Air Base"},
+  aircraft:"Aircraft",
+  wx:["Wind ESE 9 kn · Scattered cloud","Broken cloud over the carriers","Squall line to the north-west","Clear over Midway · heavy AA smoke"],
+  toPearl:"→ TO PEARL HARBOR 1,300 mi",toJapan:"← TO JAPAN 2,500 mi",
+  pointLuck:"POINT LUCK",midway:"MIDWAY ATOLL",kure:"KURE ATOLL",
+  sand:"Sand I.",eastern:"Eastern I.",
+},
+zh:{
+  kicker:"太平洋戰爭 · 特別節目",
+  title:"決戰中途島",
+  subtitle:"1942年6月3日—7日 · 中太平洋",
+  live:"● 實境重建",
+  oob:"參戰序列",
+  legend:"圖例",
+  lgUS:"美軍特遣艦隊",lgJP:"日本帝國海軍艦隊",
+  lgAirUS:"美軍空襲機群",lgAirJP:"日軍空襲機群",
+  lgHeading:"航向 / 移動方向",lgSunk:"艦艇沉沒",lgCloud:"天氣鋒面",
+  lgDrag:"拖曳旋轉鏡頭",lgZoom:"滾輪縮放",lgClick:"點擊船艦看詳情",
+  camCine:"⬤ 電影運鏡",camFree:"自由鏡頭",camTop:"戰術俯瞰",
+  deckHint:"空白鍵 播放/暫停 · 拖曳時間軸快轉",
+  narrK:"戰況解說",
+  cc:"字幕 開",ccOff:"字幕 關",
+  stratLabel:"— 計策發動 —",
+  scCmd:"指揮官",scFleet:"所屬",scStatus:"狀態",scHP:"艦體完整度",
+  usnavy:"美國太平洋艦隊",ijn:"日本帝國海軍",
+  introKicker:"3D 戰役實境重建",
+  introTitle:"決戰中途島",
+  introSub:"THE BATTLE OF MIDWAY · 1942",
+  introTag:"扭轉太平洋戰局的四天。跟隨每一支艦隊、每一波攻擊、每一個改變歷史的決定——在 3D 動態海洋上即時重現。",
+  btnAuto:"▶ 播放紀錄片",btnFree:"自由探索",
+  outKicker:"戰後總結",outTitle:"美軍決定性勝利",
+  outUSh:"美國 — 損失",outJPh:"日本 — 損失",
+  outText:"6月4日早晨短短五分鐘內,日本航艦部隊的精銳毀於一旦。此後日本再也未能奪回太平洋的戰略主動權。中途島海戰被譽為史上最具決定性的海戰之一。",
+  btnReplay:"⟲ 重新播放",btnExplore:"繼續探索",
+  statuses:{ok:"正常",dmg:"受損",fire:"起火",sink:"沉沒中",sunk:"沉沒"},
+  classes:{cv:"航空母艦",bb:"戰艦",ca:"重巡洋艦",dd:"驅逐艦",ap:"運輸艦",ss:"潛艦",base:"航空基地"},
+  aircraft:"艦載機",
+  wx:["東南東風9節 · 疏雲","美軍航艦上空雲層密布","西北方有風暴鋒面","中途島上空晴朗 · 高砲煙幕"],
+  toPearl:"→ 往珍珠港 1,300哩",toJapan:"← 往日本 2,500哩",
+  pointLuck:"幸運點",midway:"中途島環礁",kure:"庫雷環礁",
+  sand:"沙島",eastern:"東島",
+}};
+let LANG = 'zh';
+const T = k => I18N[LANG][k];
+/* ---------------- bilingual names ---------------- */
+const NAMES = {
+ akagi:{en:"Akagi",zh:"赤城"},kaga:{en:"Kaga",zh:"加賀"},soryu:{en:"Sōryū",zh:"蒼龍"},hiryu:{en:"Hiryū",zh:"飛龍"},
+ yamato:{en:"Yamato",zh:"大和"},nagato:{en:"Nagato",zh:"長門"},mutsu:{en:"Mutsu",zh:"陸奧"},
+ tone:{en:"Tone",zh:"利根"},chikuma:{en:"Chikuma",zh:"筑摩"},haruna:{en:"Haruna",zh:"榛名"},kirishima:{en:"Kirishima",zh:"霧島"},
+ mogami:{en:"Mogami",zh:"最上"},mikuma:{en:"Mikuma",zh:"三隈"},
+ enterprise:{en:"Enterprise CV-6",zh:"企業號 CV-6"},hornet:{en:"Hornet CV-8",zh:"大黃蜂號 CV-8"},yorktown:{en:"Yorktown CV-5",zh:"約克鎮號 CV-5"},
+ i168:{en:"I-168",zh:"伊-168"},midwayBase:{en:"Midway NAS",zh:"中途島航空基地"},
+ dd:{en:"Destroyer screen",zh:"驅逐艦幕"},ca:{en:"Cruiser screen",zh:"巡洋艦隊"},ap:{en:"Invasion transports",zh:"登陸運輸船團"},
+ atago:{en:"Atago",zh:"愛宕"},
+};
+const CMDRS = {
+ nimitz:{en:"ADM Chester Nimitz",zh:"尼米茲 上將"},
+ fletcher:{en:"RADM Frank J. Fletcher",zh:"弗萊徹 少將"},
+ spruance:{en:"RADM Raymond Spruance",zh:"史普魯恩斯 少將"},
+ yamamoto:{en:"ADM Isoroku Yamamoto",zh:"山本五十六 大將"},
+ nagumo:{en:"VADM Chūichi Nagumo",zh:"南雲忠一 中將"},
+ yamaguchi:{en:"RADM Tamon Yamaguchi",zh:"山口多聞 少將"},
+ kondo:{en:"VADM Nobutake Kondō",zh:"近藤信竹 中將"},
+ tomonaga:{en:"LT Jōichi Tomonaga",zh:"友永丈市 大尉"},
+ waldron:{en:"LCDR John Waldron",zh:"沃爾德倫 少校"},
+ mcclusky:{en:"LCDR Wade McClusky",zh:"麥克拉斯基 少校"},
+ leslie:{en:"LCDR Max Leslie",zh:"萊斯利 少校"},
+ tanabe:{en:"LCDR Yahachi Tanabe",zh:"田邊彌八 少校"},
+ simard:{en:"CAPT Cyril Simard",zh:"西馬德 上校"},
+};
+const FLEETNAMES = {
+ kb:{en:"1st Air Fleet — Kidō Butai",zh:"第一航空艦隊「機動部隊」"},
+ hiryuF:{en:"Hiryū Group (CarDiv 2)",zh:"飛龍隊(二航戰)"},
+ tf16:{en:"Task Force 16",zh:"第16特遣艦隊"},
+ tf17:{en:"Task Force 17",zh:"第17特遣艦隊"},
+ main:{en:"Main Body (1st Fleet)",zh:"主力部隊(第一艦隊)"},
+ inv:{en:"Invasion Force",zh:"攻略部隊"},
+ cs7:{en:"CruDiv 7 Close Support",zh:"第七戰隊支援隊"},
+ sub:{en:"SubRon — I-168",zh:"潛水戰隊 伊-168"},
+ base:{en:"Midway Garrison",zh:"中途島守備隊"},
+};
+
+/* ---------------- timeline: hours from June 3 1942, 00:00 ----------------
+   June4 00:00 = T24 · June5 = T48 · June6 = T72 · June7 = T96 */
+const T_START=6, T_END=106;
+
+/* fleet movement tracks  [t, x, z]  (x:east+, z:south+; map units ≈ 1.4 km) */
+const FLEETS = [
+ {id:'kb', side:'jp', name:'kb', track:[
+   [0,-560,-360],[20,-360,-235],[28.5,-228,-142],[31,-208,-126],[33,-198,-118],
+   [34.4,-194,-114],[40,-225,-160],[52,-330,-230],[106,-330,-230]],
+  ships:[
+   {id:'akagi',type:'cv',off:[0,0],hp:100,flagOf:'nagumo',air:60},
+   {id:'kaga',type:'cv',off:[-26,18],hp:100,air:72},
+   {id:'soryu',type:'cv',off:[26,20],hp:100,air:63},
+   {id:'haruna',type:'bb',off:[-40,-14]},{id:'kirishima',type:'bb',off:[42,-12]},
+   {id:'tone',type:'ca',off:[14,-34]},{id:'chikuma',type:'ca',off:[-16,-36]},
+   {id:'dd',type:'dd',off:[0,42]},{id:'dd',type:'dd',off:[-52,8]},{id:'dd',type:'dd',off:[54,10]},
+ ]},
+ {id:'hiryuF', side:'jp', name:'hiryuF', track:[
+   [0,-556,-388],[20,-356,-263],[28.5,-224,-170],[33,-194,-146],
+   [34.5,-188,-142],[36,-160,-170],[39,-140,-196],[41,-138,-206],[106,-138,-206]],
+  ships:[
+   {id:'hiryu',type:'cv',off:[0,0],hp:100,flagOf:'yamaguchi',air:57},
+   {id:'dd',type:'dd',off:[-20,16]},{id:'dd',type:'dd',off:[22,16]},
+ ]},
+ {id:'tf16', side:'us', name:'tf16', track:[
+   [0,310,-205],[26,255,-180],[30,215,-160],[33,150,-150],[36,120,-148],
+   [40,170,-160],[48,260,-170],[60,80,-150],[72,-60,-130],[84,-200,-105],[96,-150,-130],[106,-60,-150]],
+  ships:[
+   {id:'enterprise',type:'cv',off:[0,0],hp:100,flagOf:'spruance',air:79},
+   {id:'hornet',type:'cv',off:[-30,22],hp:100,air:79},
+   {id:'ca',type:'ca',off:[28,-18]},{id:'ca',type:'ca',off:[-32,-16]},{id:'ca',type:'ca',off:[0,-34]},
+   {id:'dd',type:'dd',off:[52,6]},{id:'dd',type:'dd',off:[-56,4]},{id:'dd',type:'dd',off:[12,40]},{id:'dd',type:'dd',off:[-16,42]},
+ ]},
+ {id:'tf17', side:'us', name:'tf17', track:[
+   [0,332,-238],[26,278,-214],[30,240,-196],[33,185,-186],[36,158,-184],[106,158,-184]],
+  ships:[
+   {id:'yorktown',type:'cv',off:[0,0],hp:100,flagOf:'fletcher',air:75},
+   {id:'ca',type:'ca',off:[26,-16]},{id:'ca',type:'ca',off:[-26,-16]},
+   {id:'dd',type:'dd',off:[0,34]},{id:'dd',type:'dd',off:[-44,8]},{id:'dd',type:'dd',off:[44,8]},
+ ]},
+ {id:'main', side:'jp', name:'main', track:[
+   [0,-940,-170],[30,-800,-150],[48,-700,-140],[56,-760,-160],[80,-980,-180],[106,-1060,-190]],
+  ships:[
+   {id:'yamato',type:'bb',off:[0,0],hp:100,flagOf:'yamamoto'},
+   {id:'nagato',type:'bb',off:[-34,20]},{id:'mutsu',type:'bb',off:[34,20]},
+   {id:'dd',type:'dd',off:[0,-32]},{id:'dd',type:'dd',off:[-60,0]},{id:'dd',type:'dd',off:[60,0]},
+ ]},
+ {id:'inv', side:'jp', name:'inv', track:[
+   [0,-780,230],[9,-700,205],[30,-560,170],[44,-520,160],[60,-700,210],[106,-960,260]],
+  ships:[
+   {id:'atago',type:'ca',off:[0,-26],flagOf:'kondo'},
+   {id:'ap',type:'ap',off:[-22,8]},{id:'ap',type:'ap',off:[8,14]},{id:'ap',type:'ap',off:[-6,30]},{id:'ap',type:'ap',off:[24,34]},
+   {id:'dd',type:'dd',off:[-46,0]},{id:'dd',type:'dd',off:[46,2]},
+ ]},
+ {id:'cs7', side:'jp', name:'cs7', track:[
+   [0,-700,300],[24,-520,220],[48,-330,130],[53,-310,118],[60,-360,128],[84,-520,150],[106,-640,170]],
+  ships:[
+   {id:'mogami',type:'ca',off:[-14,8],hp:100},
+   {id:'mikuma',type:'ca',off:[14,-8],hp:100},
+ ]},
+ {id:'sub', side:'jp', name:'sub', track:[
+   [0,-90,60],[40,-40,30],[70,60,-90],[84,140,-170],[87,156,-182],[106,80,-120]],
+  ships:[{id:'i168',type:'ss',off:[0,0],flagOf:'tanabe'}]},
+ {id:'base', side:'us', name:'base', track:[[0,0,0],[106,0,0]],
+  ships:[{id:'midwayBase',type:'base',off:[0,0],hp:100,flagOf:'simard',air:115,fixed:true}]},
+];
+
+/* ---------------- events ----------------
+ type: intel(blue) battle(red) strategy(gold) info(grey)
+ cam:[x,y,z, tx,tz]  fx: effect commands */
+const EVENTS = [
+ {t:6.0,id:'e_codes',type:'strategy',cmd:'nimitz',focus:[0,0],cam:[120,210,210,0,0],
+  strat:{en:'"AF IS MIDWAY"',zh:'「AF就是中途島」'},
+  eff:{en:'Codebreakers reveal the entire Japanese plan',zh:'密碼破譯 — 日軍全盤計畫曝光'},
+  title:{en:"Station HYPO breaks the code",zh:"HYPO情報站破譯密碼"},
+  desc:{en:"Pearl Harbor codebreakers trick Japan into confirming target “AF” is Midway. Nimitz knows the ambush is coming — and sets one of his own at Point Luck.",
+        zh:"珍珠港密碼破譯小組以「淡水故障」假電報誘使日軍證實目標「AF」即中途島。尼米茲洞悉全局,在「幸運點」反設埋伏。"}},
+ {t:9.0,id:'e_sight',type:'intel',cmd:'simard',focus:[-560,170],cam:[-560,150,330,-560,170],
+  title:{en:"PBY sights the invasion force",zh:"PBY水上機發現登陸船團"},
+  desc:{en:"A Catalina from Midway spots Japanese transports 500 miles west. B-17s attack at dusk — no hits, but the enemy is found.",
+        zh:"中途島起飛的卡塔利娜偵察機在西方500哩發現日軍運輸船團。B-17黃昏轟炸未命中,但敵蹤已現。"}},
+ {t:28.5,id:'e_jplaunch',type:'battle',cmd:'tomonaga',focus:[-228,-142],cam:[-228,120,40,-228,-142],
+  title:{en:"Kidō Butai launches against Midway",zh:"機動部隊空襲中途島"},
+  desc:{en:"04:30 — 108 aircraft under Lt. Tomonaga rise from four carriers. Nagumo still has no idea American carriers are at sea.",
+        zh:"04:30 — 友永大尉率108架戰機自四艘航艦升空。南雲此時仍不知美軍航艦已在海上。"}},
+ {t:30.4,id:'e_midwayhit',type:'battle',cmd:'simard',focus:[0,0],cam:[60,90,140,0,0],
+  title:{en:"Midway under attack",zh:"中途島遭受轟炸"},
+  desc:{en:"06:30 — The atoll burns, but the runway survives and every US plane is already airborne. Tomonaga radios: “A second strike is needed.”",
+        zh:"06:30 — 環礁陷入火海,但跑道未毀、美機早已升空疏散。友永回報:「有必要實施第二次攻擊。」"}},
+ {t:31.0,id:'e_sprlaunch',type:'strategy',cmd:'spruance',focus:[215,-160],cam:[215,130,30,215,-160],
+  strat:{en:'CALCULATED RISK',zh:'放手一搏'},
+  eff:{en:'Full deckload strike at extreme range',zh:'極限距離 全甲板攻擊隊出擊'},
+  title:{en:"Spruance launches everything",zh:"史普魯恩斯傾巢而出"},
+  desc:{en:"07:00 — Acting on a single sighting report, Spruance hurls 116 aircraft at the Japanese carriers at maximum range, hoping to catch their decks full.",
+        zh:"07:00 — 僅憑一份偵察回報,史普魯恩斯在極限航程外派出116架艦載機,賭日軍甲板正擠滿整補中的飛機。"}},
+ {t:31.5,id:'e_midwayatk',type:'battle',cmd:'simard',focus:[-205,-126],cam:[-205,110,60,-205,-126],
+  title:{en:"Midway strikes back — and fails",zh:"中途島反擊失利"},
+  desc:{en:"07:10 — Torpedo bombers and Marine dive bombers from Midway attack the carriers without escort. They score no hits and are slaughtered by Zeros.",
+        zh:"07:10 — 中途島的魚雷機與陸戰隊俯衝轟炸機在無護航下強攻航艦,一無所中,遭零式戰機屠戮。"}},
+ {t:31.75,id:'e_rearm',type:'strategy',cmd:'nagumo',focus:[-205,-124],cam:[-205,70,40,-205,-124],
+  strat:{en:"NAGUMO'S DILEMMA",zh:'南雲的兩難'},
+  eff:{en:'Hangars choked with bombs, torpedoes & fuel',zh:'機庫堆滿炸彈、魚雷與油管'},
+  title:{en:"The fatal rearming order",zh:"致命的換裝命令"},
+  desc:{en:"07:15 — Nagumo orders his reserve planes rearmed with land bombs for a second Midway strike. Minutes later a scout reports enemy ships. The hangars become powder kegs.",
+        zh:"07:15 — 南雲下令預備機隊改掛對地炸彈,準備二次空襲中途島。數分鐘後偵察機回報發現敵艦——機庫從此成為火藥庫。"}},
+ {t:32.0,id:'e_tone',type:'intel',cmd:'nagumo',focus:[-196,-120],cam:[-130,140,-40,-196,-120],
+  title:{en:"Tone No.4 scout: “Enemy ships sighted”",zh:"利根四號機:「發現敵艦」"},
+  desc:{en:"07:28 — A late-launched floatplane finally spots the US fleet… and at 08:20 adds the words Nagumo dreads: “Enemy force accompanied by what appears to be a carrier.”",
+        zh:"07:28 — 因彈射故障遲飛的利根四號偵察機終於發現美軍艦隊…08:20更補上南雲最恐懼的一句:「敵艦隊似伴隨航空母艦一艘。」"}},
+ {t:33.3,id:'e_vt8',type:'battle',cmd:'waldron',focus:[-198,-118],cam:[-198,40,50,-198,-118],
+  title:{en:"Torpedo Eight's sacrifice",zh:"第八魚雷中隊的犧牲"},
+  desc:{en:"09:20 — Waldron's 15 Devastators attack alone, low and slow. All are shot down; only Ens. Gay survives. But the Zeros are dragged down to sea level…",
+        zh:"09:20 — 沃爾德倫的15架毀滅者魚雷機獨自低空進襲,全數遭擊落,僅蓋伊少尉生還。然而零式機群也被拖到了海平面……"}},
+ {t:34.3,id:'e_5min',type:'strategy',cmd:'mcclusky',focus:[-196,-116],cam:[-196,170,-10,-196,-116],
+  strat:{en:'THE FATEFUL FIVE MINUTES',zh:'命運的五分鐘'},
+  eff:{en:'Akagi · Kaga · Sōryū ablaze in one pass',zh:'赤城·加賀·蒼龍 一擊俱焚'},
+  title:{en:"Dive bombers out of the sun",zh:"俯衝轟炸機自天而降"},
+  desc:{en:"10:22 — McClusky, fuel almost gone, follows a lone destroyer's wake to the carriers. With the Zeros at sea level, Enterprise and Yorktown dive bombers tip over unopposed. In five minutes three carriers are infernos.",
+        zh:"10:22 — 燃料將盡的麥克拉斯基循一艘驅逐艦的航跡找到航艦。零式機全在低空,企業號與約克鎮號的俯衝轟炸機毫無阻攔地翻身俯衝——五分鐘內,三艘航艦化為煉獄。"}},
+ {t:36.0,id:'e_yk1',type:'battle',cmd:'yamaguchi',focus:[158,-184],cam:[158,100,-60,158,-184],
+  title:{en:"Hiryū strikes back — Yorktown hit",zh:"飛龍反擊 約克鎮中彈"},
+  desc:{en:"12:00 — Yamaguchi's first wave puts three bombs into Yorktown. Damage control is so good that the second wave mistakes her for an untouched carrier.",
+        zh:"12:00 — 山口多聞的第一波攻擊命中約克鎮號三彈。美軍損管之佳,竟讓第二波誤認她是另一艘無傷航艦。"}},
+ {t:38.6,id:'e_yk2',type:'battle',cmd:'tomonaga',focus:[158,-184],cam:[200,60,-130,158,-184],
+  title:{en:"Tomonaga's last attack",zh:"友永隊長最後的出擊"},
+  desc:{en:"14:30 — Knowing his damaged fuel tank means no return, Tomonaga leads Hiryū's torpedo planes in. Two torpedoes stop Yorktown dead. Tomonaga does not come back.",
+        zh:"14:30 — 油箱中彈、明知有去無回的友永,率飛龍魚雷隊強攻。兩枚魚雷令約克鎮完全癱瘓。友永一去不返。"}},
+ {t:41.0,id:'e_hiryu',type:'battle',cmd:'yamaguchi',focus:[-138,-206],cam:[-138,120,-90,-138,-206],
+  title:{en:"Hiryū avenged",zh:"飛龍償命"},
+  desc:{en:"17:00 — Twenty-four Enterprise dive bombers find the last carrier. Four hits turn Hiryū into a torch. Yamaguchi chooses to go down with his ship.",
+        zh:"17:00 — 24架企業號俯衝轟炸機找到最後一艘航艦,四彈命中,飛龍成為火炬。山口多聞選擇與艦同沉。"}},
+ {t:50.9,id:'e_cancel',type:'strategy',cmd:'yamamoto',focus:[-700,-140],cam:[-700,160,120,-700,-140],
+  strat:{en:'OPERATION MI — CANCELLED',zh:'MI作戰 中止'},
+  eff:{en:'The Combined Fleet turns for home',zh:'聯合艦隊掉頭西返'},
+  title:{en:"Yamamoto cancels the invasion",zh:"山本五十六中止作戰"},
+  desc:{en:"02:55, June 5 — With all four carriers lost and Spruance refusing a night gunfight, Yamamoto orders general retirement. The hunter has become the hunted.",
+        zh:"6月5日 02:55 — 四艘航艦盡失,史普魯恩斯又拒絕夜間炮戰,山本下令全軍撤退。獵人已淪為獵物。"}},
+ {t:53.0,id:'e_collide',type:'info',cmd:'kondo',focus:[-310,118],cam:[-310,90,200,-310,118],
+  title:{en:"Mogami and Mikuma collide",zh:"最上、三隈相撞"},
+  desc:{en:"Dodging submarine Tambor in the dark, cruisers Mogami and Mikuma collide. Crippled and trailing oil, they limp west — straight into tomorrow's air strikes.",
+        zh:"為閃避美潛艦「鼓魚號」,最上與三隈黑夜中相撞。兩艦重創拖油西逃——正撞上隔日的空襲。"}},
+ {t:84.0,id:'e_mikuma',type:'battle',cmd:'spruance',focus:[-520,150],cam:[-520,110,260,-520,150],
+  title:{en:"Mikuma pounded under",zh:"三隈沉沒"},
+  desc:{en:"June 6 — Dive bombers from Enterprise and Hornet smash the crippled cruisers. Mikuma sinks; Mogami, gutted, barely escapes.",
+        zh:"6月6日 — 企業號與大黃蜂號的俯衝轟炸機痛擊跛行的巡洋艦。三隈沉沒,最上重創僅以身免。"}},
+ {t:87.0,id:'e_i168',type:'battle',cmd:'tanabe',focus:[156,-182],cam:[190,50,-120,156,-182],
+  title:{en:"I-168 finds Yorktown",zh:"伊-168獵殺約克鎮"},
+  desc:{en:"June 6, 13:36 — Submarine I-168 slips through the destroyer screen and torpedoes the salvage-bound Yorktown and destroyer Hammann.",
+        zh:"6月6日 13:36 — 伊-168潛艦穿越驅逐艦幕,魚雷命中搶救中的約克鎮號及驅逐艦哈曼號。"}},
+ {t:103.0,id:'e_ykdown',type:'info',cmd:'fletcher',focus:[156,-182],cam:[156,70,-110,156,-182],
+  title:{en:"Yorktown slips beneath the waves",zh:"約克鎮號沉入波濤"},
+  desc:{en:"Dawn, June 7 — After two days of stubborn survival, Yorktown rolls over and sinks. She is the price of a victory that changed the war.",
+        zh:"6月7日拂曉 — 頑強支撐兩日後,約克鎮號翻覆沉沒。她是這場扭轉戰局的勝利所付出的代價。"}},
+];
+
+/* damage script: [t, shipKey, hp, status]  status: dmg fire sink sunk */
+const DAMAGE = [
+ [30.4,'base.midwayBase',62,'fire'],[33.0,'base.midwayBase',62,'dmg'],
+ [34.3,'kb.akagi',18,'fire'],[34.32,'kb.kaga',6,'fire'],[34.36,'kb.soryu',8,'fire'],
+ [40.0,'kb.soryu',0,'sink'],[43.2,'kb.kaga',0,'sink'],[44.0,'kb.soryu',0,'sunk'],[46.5,'kb.kaga',0,'sunk'],
+ [41.0,'hiryuF.hiryu',12,'fire'],
+ [52.0,'kb.akagi',0,'sink'],[55.0,'kb.akagi',0,'sunk'],
+ [53.2,'hiryuF.hiryu',0,'sink'],[56.0,'hiryuF.hiryu',0,'sunk'],
+ [36.0,'tf17.yorktown',55,'fire'],[37.4,'tf17.yorktown',55,'dmg'],
+ [38.6,'tf17.yorktown',26,'fire'],[40.0,'tf17.yorktown',26,'dmg'],
+ [53.0,'cs7.mikuma',45,'dmg'],[53.0,'cs7.mogami',40,'dmg'],
+ [82.5,'cs7.mikuma',10,'fire'],[84.0,'cs7.mikuma',0,'sink'],[86.5,'cs7.mikuma',0,'sunk'],
+ [87.0,'tf17.yorktown',8,'sink'],[103.0,'tf17.yorktown',0,'sink'],[104.5,'tf17.yorktown',0,'sunk'],
+];
+/* aircraft pool changes [t, fleet.ship, newCount] */
+const AIRLOSS = [
+ [30.5,'base.midwayBase',70],[33,'base.midwayBase',38],
+ [33.4,'tf16.hornet',64],[33.5,'tf16.enterprise',65],[34.5,'tf16.enterprise',49],
+ [36.2,'tf17.yorktown',50],[34.4,'kb.akagi',0],[34.4,'kb.kaga',0],[34.4,'kb.soryu',0],
+ [36.1,'hiryuF.hiryu',39],[38.8,'hiryuF.hiryu',24],[41.1,'hiryuF.hiryu',0],
+];
+
+/* air strikes: t0,t1, from→to ([x,z] resolved at runtime), side, kind(level|dive|torp), n planes, losses(fraction die at target) */
+const STRIKES = [
+ {t0:28.5,t1:30.4,from:'kb',to:'base',side:'jp',kind:'level',n:9,back:true},
+ {t0:9.5,t1:11,from:'base',to:'inv',side:'us',kind:'level',n:4,back:true,high:true},
+ {t0:31.0,t1:33.0,from:'base',to:'kb',side:'us',kind:'torp',n:6,loss:.8,back:true},
+ {t0:31.0,t1:34.3,from:'tf16',to:'kb',side:'us',kind:'dive',n:8,loss:.2,back:true,high:true},
+ {t0:31.2,t1:33.3,from:'tf16',to:'kb',side:'us',kind:'torp',n:7,loss:.95},
+ {t0:31.8,t1:34.35,from:'tf17',to:'kb',side:'us',kind:'dive',n:6,loss:.2,back:true,high:true},
+ {t0:34.8,t1:36.0,from:'hiryuF',to:'tf17',side:'jp',kind:'dive',n:7,loss:.6,back:true,high:true},
+ {t0:37.3,t1:38.6,from:'hiryuF',to:'tf17',side:'jp',kind:'torp',n:6,loss:.5,back:true},
+ {t0:39.5,t1:41.0,from:'tf16',to:'hiryuF',side:'us',kind:'dive',n:9,loss:.12,back:true,high:true},
+ {t0:82.0,t1:84.0,from:'tf16',to:'cs7',side:'us',kind:'dive',n:8,loss:.05,back:true,high:true},
+];
+
+/* weather phases: index into I18N wx[] */
+const WXPHASE = [[0,0],[26,1],[44,2],[80,3]];
+
+/* live commentary subtitles  [t0, t1, {zh,en}] */
+const NARR = [
+ [6,9,{zh:"美軍已破譯日軍密碼,全盤掌握作戰計畫。三艘航艦悄然埋伏於中途島東北的「幸運點」。",
+       en:"US codebreakers have laid the Japanese plan bare. Three American carriers lie in ambush at Point Luck, north-east of Midway."}],
+ [9,24,{zh:"日軍兵分四路橫越太平洋:南雲航艦部隊、山本主力、近藤攻略部隊與運輸船團。美軍按兵不動,守株待兔。",
+       en:"Four Japanese forces converge across the Pacific — Nagumo's carriers, Yamamoto's battleships, Kondō's invasion force. The Americans wait in silence."}],
+ [24,28.5,{zh:"6月4日凌晨,南雲的四艘航艦逼近發起陣位,艦上機庫徹夜整備。美軍偵察機已在黎明前升空。",
+       en:"Before dawn on June 4 the Kidō Butai reaches its launch point. Hangar crews work through the night; American search planes are already aloft."}],
+ [28.5,30.4,{zh:"友永機隊108架戰機直撲中途島。環礁雷達捕捉到來襲機群,守軍戰機緊急攔截、全島進入戰備。",
+       en:"Tomonaga's 108 aircraft bear down on Midway. Radar picks up the raid; Marine fighters scramble and every gun on the atoll stands ready."}],
+ [30.4,31.5,{zh:"中途島陷入火海,但跑道完好、美機早已疏散。同時美軍三艘航艦正全速逼近日軍側翼。",
+       en:"Midway burns, but the runways survive and its aircraft were long gone. Meanwhile three US carriers race toward the Japanese flank."}],
+ [31.5,32,{zh:"中途島岸基機群輪番反擊全數失利。南雲誤判戰場,下令預備隊卸下魚雷、改掛對地炸彈。",
+       en:"Midway's land-based strikes fail one after another. Misreading the battle, Nagumo orders torpedoes struck below and land bombs loaded."}],
+ [32,33.3,{zh:"「敵艦隊伴隨航艦一艘」——南雲陷入兩難,甲板上炸彈魚雷堆積如山。美軍機群已在途中。",
+       en:"“Enemy force accompanied by a carrier.” Nagumo hesitates; bombs and torpedoes pile up on his decks. The American strike is already inbound."}],
+ [33.3,34.3,{zh:"美軍魚雷中隊無護航強攻,近乎全滅。但日軍零式戰機被拖至海平面——高空門戶洞開。",
+       en:"The US torpedo squadrons attack unescorted and are massacred — but they drag every Zero down to sea level, leaving the sky above wide open."}],
+ [34.3,36,{zh:"10:22,俯衝轟炸機自雲隙俯衝。赤城、加賀、蒼龍五分鐘內俱焚。日軍僅存飛龍一艦。",
+       en:"10:22 — dive bombers plunge from the clouds. In five minutes Akagi, Kaga and Sōryū are infernos. Only Hiryū remains."}],
+ [36,38.6,{zh:"山口多聞率飛龍孤軍反擊,約克鎮號三彈命中起火。美軍損管奮力搶救,航速一度恢復。",
+       en:"Yamaguchi's Hiryū strikes back alone — three bombs set Yorktown ablaze. Heroic damage control brings her back to life, briefly."}],
+ [38.6,41,{zh:"友永隊再襲,兩枚魚雷令約克鎮癱瘓棄艦。美軍偵察機同時鎖定了飛龍的位置。",
+       en:"Tomonaga's final attack puts two torpedoes into Yorktown; she is abandoned. At the same moment, US scouts pin down Hiryū."}],
+ [41,50.9,{zh:"飛龍中彈焚毀,日軍四艘航艦全滅。南雲艦隊向西北風暴中撤退,山口多聞與艦同沉。",
+       en:"Hiryū burns. All four Japanese carriers are gone. Nagumo retreats into the north-west squalls; Yamaguchi goes down with his ship."}],
+ [50.9,72,{zh:"山本五十六中止MI作戰,聯合艦隊連夜西撤。史普魯恩斯謹慎追擊,拒絕夜間炮戰。",
+       en:"Yamamoto cancels Operation MI; the Combined Fleet withdraws in the night. Spruance pursues warily, refusing a night gunfight."}],
+ [72,87,{zh:"美軍機群追獵相撞跛行的最上、三隈。海面下,伊-168正悄悄逼近癱瘓的約克鎮。",
+       en:"US aircraft hunt down the crippled cruisers Mogami and Mikuma. Beneath the waves, I-168 stalks the helpless Yorktown."}],
+ [87,106,{zh:"約克鎮號終告沉沒。四天激戰,太平洋戰局就此逆轉——日本再未奪回主動權。",
+       en:"Yorktown finally slips under. In four days the tide of the Pacific War has turned — Japan never regains the initiative."}],
+];
+/* ================= THREE.JS SCENE ================= */
+const canvas = document.getElementById('c3d');
+const renderer = new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x05101e);
+scene.fog = new THREE.Fog(0x05101e, 700, 2200);
+const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 1, 6000);
+camera.position.set(120,210,210);
+
+const sun = new THREE.DirectionalLight(0xfff2d8, 1.05); sun.position.set(-300,500,200); scene.add(sun);
+scene.add(new THREE.AmbientLight(0x4a6a8a, .65));
+const moonGlow = new THREE.HemisphereLight(0x6688bb,0x0a1a2a,.5); scene.add(moonGlow);
+
+/* ---------- ocean ---------- */
+const OCEAN_SEG = 110, OCEAN_SIZE = 4200;
+const oceanGeo = new THREE.PlaneGeometry(OCEAN_SIZE,OCEAN_SIZE,OCEAN_SEG,OCEAN_SEG);
+oceanGeo.rotateX(-Math.PI/2);
+const oceanMat = new THREE.MeshPhongMaterial({color:0x0b3554, specular:0x16293c, shininess:18,
+  transparent:true, opacity:.96});
+const ocean = new THREE.Mesh(oceanGeo, oceanMat); scene.add(ocean);
+const oPos = oceanGeo.attributes.position;
+const oBase = new Float32Array(oPos.array);
+function animOcean(time){
+  for(let i=0;i<oPos.count;i++){
+    const x=oBase[i*3], z=oBase[i*3+2];
+    oPos.array[i*3+1]= Math.sin(x*.012+time*.7)*2.2 + Math.cos(z*.016+time*.55)*1.8 + Math.sin((x+z)*.007+time*.3)*1.4;
+  }
+  oPos.needsUpdate=true; oceanGeo.computeVertexNormals();
+}
+/* lat/long plot grid */
+const gridMat = new THREE.LineBasicMaterial({color:0x1d4663,transparent:true,opacity:.4});
+const gridGeo = new THREE.BufferGeometry(); {
+  const v=[]; for(let i=-1500;i<=1500;i+=150){ v.push(i,3,-1500, i,3,1500, -1500,3,i, 1500,3,i); }
+  gridGeo.setAttribute('position', new THREE.Float32BufferAttribute(v,3));
+}
+scene.add(new THREE.LineSegments(gridGeo,gridMat));
+
+/* ---------- islands ---------- */
+function makeIslandBlob(rx,rz,h,color){
+  const g = new THREE.CylinderGeometry(1,1.25,h,18,3);
+  const p = g.attributes.position;
+  for(let i=0;i<p.count;i++){
+    const a=Math.atan2(p.getZ(i),p.getX(i));
+    const w=1+Math.sin(a*3+1.7)*.18+Math.cos(a*5)*.12;
+    p.setX(i,p.getX(i)*rx*w); p.setZ(i,p.getZ(i)*rz*w);
+  }
+  g.computeVertexNormals();
+  return new THREE.Mesh(g,new THREE.MeshLambertMaterial({color}));
+}
+const midwayGrp = new THREE.Group();
+{ // lagoon + reef ring
+  const reef = new THREE.Mesh(new THREE.RingGeometry(30,40,48),
+    new THREE.MeshBasicMaterial({color:0x2fbfae,transparent:true,opacity:.35,side:THREE.DoubleSide}));
+  reef.rotation.x=-Math.PI/2; reef.position.y=3.5; midwayGrp.add(reef);
+  const lagoon = new THREE.Mesh(new THREE.CircleGeometry(31,48),
+    new THREE.MeshBasicMaterial({color:0x1a7f93,transparent:true,opacity:.5}));
+  lagoon.rotation.x=-Math.PI/2; lagoon.position.y=3.2; midwayGrp.add(lagoon);
+  const sand = makeIslandBlob(14,10,4,0xd9c99a); sand.position.set(-14,2,6); midwayGrp.add(sand);
+  const east = makeIslandBlob(12,9,4,0xcfc08e); east.position.set(13,2,10); midwayGrp.add(east);
+  // runways on Eastern Island
+  for(const [rot,len] of [[0.5,16],[-0.6,14],[1.6,12]]){
+    const rw=new THREE.Mesh(new THREE.BoxGeometry(len,.5,2.6),new THREE.MeshLambertMaterial({color:0x55565a}));
+    rw.rotation.y=rot; rw.position.set(13,4.4,10); midwayGrp.add(rw);
+  }
+  // palm clusters
+  for(let i=0;i<7;i++){
+    const t=new THREE.Mesh(new THREE.ConeGeometry(1.3,4,6),new THREE.MeshLambertMaterial({color:0x2e6b34}));
+    t.position.set(-14+Math.cos(i*2.3)*8, 6, 6+Math.sin(i*1.9)*5); midwayGrp.add(t);
+  }
+}
+scene.add(midwayGrp);
+const kure = makeIslandBlob(9,7,3,0xd2c294); kure.position.set(-64,1.5,-14); scene.add(kure);
+
+/* ---------- text label sprites ---------- */
+function textSprite(text,{size=26,color='#fff',bg=null,border=null,font='Noto Sans TC',weight=700,pad=10,scale=1}={}){
+  const c=document.createElement('canvas'),ctx=c.getContext('2d');
+  ctx.font=`${weight} ${size}px ${font}`;
+  const w=Math.ceil(ctx.measureText(text).width)+pad*2, h=size+pad*1.6;
+  c.width=w*2;c.height=h*2;ctx.scale(2,2);
+  if(bg){ctx.fillStyle=bg;ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(0,0,w,h,3); else ctx.rect(0,0,w,h); ctx.fill();}
+  if(border){ctx.strokeStyle=border;ctx.lineWidth=1.5;ctx.strokeRect(.75,.75,w-1.5,h-1.5);}
+  ctx.font=`${weight} ${size}px ${font}`;ctx.fillStyle=color;ctx.textBaseline='middle';
+  ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=6;
+  ctx.fillText(text,pad,h/2+1);
+  const tex=new THREE.CanvasTexture(c); tex.minFilter=THREE.LinearFilter;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,transparent:true}));
+  sp.scale.set(w*.24*scale,h*.24*scale,1);
+  sp.userData.baseScale=[sp.scale.x,sp.scale.y];
+  labelReg.add(sp); // constant screen-size scaling, see updateLabels()
+  return sp;
+}
+const labelReg=new Set(), barReg=new Set(), _lv=new THREE.Vector3();
+function updateLabels(){
+  // hp bars: fade out at very close range so they never block the view
+  for(const sp of barReg){
+    if(!sp.parent){barReg.delete(sp);continue;}
+    sp.getWorldPosition(_lv);
+    sp.material.opacity=Math.max(0,Math.min(1,(_lv.distanceTo(camera.position)-45)/70));
+  }
+}
+/* ---- screen-space DOM label system ---- */
+const labelLayer=document.getElementById('labels');
+const domLabels=[];
+function addDomLabel(cls,text,getPos,opt={}){
+  const el=document.createElement('div');
+  el.className='lbl '+cls; el.textContent=text;
+  if(opt.color)el.style.color=opt.color;
+  labelLayer.appendChild(el);
+  const L={el,getPos,tag:opt.tag||'',maxD:opt.maxD||0};
+  domLabels.push(L); return L;
+}
+function clearDomGroup(tag){
+  for(let i=domLabels.length-1;i>=0;i--)
+    if(domLabels[i].tag===tag){domLabels[i].el.remove();domLabels.splice(i,1);}
+}
+const _wp=new THREE.Vector3(), _ndc=new THREE.Vector3(), _camDir=new THREE.Vector3();
+function updateDomLabels(){
+  const W=innerWidth,H=innerHeight;
+  camera.getWorldDirection(_camDir);
+  for(const L of domLabels){
+    const p=L.getPos(_wp);
+    if(!p){L.el.style.display='none';continue;}
+    const d=camera.position.distanceTo(p);
+    if(L.maxD&&d>L.maxD){L.el.style.display='none';continue;}
+    // cull anything behind the camera (projection would mirror it on screen)
+    if((p.x-camera.position.x)*_camDir.x+(p.y-camera.position.y)*_camDir.y+(p.z-camera.position.z)*_camDir.z<0){
+      L.el.style.display='none';continue;}
+    _ndc.copy(p).project(camera);
+    if(_ndc.z>1||_ndc.x<-1.05||_ndc.x>1.05||_ndc.y<-1.1||_ndc.y>1.1){L.el.style.display='none';continue;}
+    L.el.style.display='block';
+    L.el.style.left=((_ndc.x*.5+.5)*W).toFixed(1)+'px';
+    L.el.style.top=((-_ndc.y*.5+.5)*H).toFixed(1)+'px';
+    L.el.style.opacity=d<26?(Math.max(.2,d/26*.85)).toFixed(2):'';
+  }
+}
+function buildPlaceLabels(){
+  clearDomGroup('place');
+  const add=(cls,txt,x,y,z,maxD)=>addDomLabel('place '+cls,txt,
+    v=>{v.set(x,y,z);return v;},{tag:'place',maxD:maxD||0});
+  add('major',T('midway'),0,16,0);
+  add('',T('sand'),-16,7,6,600);
+  add('',T('eastern'),15,7,10,600);
+  add('',T('kure'),-64,9,-14,900);
+  add('pl',T('pointLuck'),310,12,-205);
+  add('dim',T('toPearl'),700,10,120);
+  add('dim',T('toJapan'),-1050,10,40);
+}
+
+/* ---------- flags ---------- */
+function drawUSFlag(ctx,w,h){
+  ctx.fillStyle='#b22234';ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='#fff';for(let i=1;i<13;i+=2)ctx.fillRect(0,i*h/13,w,h/13);
+  ctx.fillStyle='#3c3b6e';ctx.fillRect(0,0,w*.42,h*7/13);
+  ctx.fillStyle='#fff';
+  for(let r=0;r<7;r++)for(let cIdx=0;cIdx<8;cIdx++){
+    if((r+cIdx)%2)continue;
+    const sx=w*.42*(cIdx+1)/9, sy=h*(7/13)*(r+1)/8;
+    ctx.beginPath();ctx.arc(sx,sy,Math.max(1.1,w*.011),0,7);ctx.fill();
+  }
+}
+function drawJPFlag(ctx,w,h){ // naval ensign — rising sun, 16 rays
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+  const cx=w*.4, cy=h*.5, R=Math.hypot(w,h);
+  ctx.fillStyle='#bc002d';
+  for(let i=0;i<16;i+=2){
+    const a0=(i/16)*Math.PI*2, a1=((i+1)/16)*Math.PI*2;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,a0,a1);ctx.closePath();ctx.fill();
+  }
+  ctx.beginPath();ctx.arc(cx,cy,h*.3,0,7);ctx.fill();
+}
+function flagTexture(side){
+  const c=document.createElement('canvas');c.width=128;c.height=84;
+  const ctx=c.getContext('2d');
+  side==='us'?drawUSFlag(ctx,128,84):drawJPFlag(ctx,128,84);
+  const t=new THREE.CanvasTexture(c);t.minFilter=THREE.LinearFilter;return t;
+}
+const FLAGTEX={us:flagTexture('us'),jp:flagTexture('jp')};
+// intro flags
+drawUSFlag(document.getElementById('fcUS').getContext('2d'),168,112);
+drawJPFlag(document.getElementById('fcJP').getContext('2d'),168,112);
+
+/* ---------- ship factory ---------- */
+const SIDEC={us:0x3da5ff,jp:0xff4646};
+const SIDEDEEP={us:0x1b4d7a,jp:0x7a2222};
+function lambert(c){return new THREE.MeshLambertMaterial({color:c});}
+function makeShipMesh(type,side){
+  const g=new THREE.Group();
+  const hullC=lambert(0x55606c), deckC=lambert(side==='us'?0x3a4654:0x4a4040);
+  const accent=lambert(SIDEC[side]);
+  let L=18;
+  if(type==='cv'){ L=26;
+    const hull=new THREE.Mesh(new THREE.BoxGeometry(26,3,7),hullC);hull.position.y=1.2;g.add(hull);
+    const deck=new THREE.Mesh(new THREE.BoxGeometry(28,1,8),deckC);deck.position.y=3.2;g.add(deck);
+    const stripe=new THREE.Mesh(new THREE.BoxGeometry(24,.2,1),accent);stripe.position.y=3.85;g.add(stripe);
+    const isl=new THREE.Mesh(new THREE.BoxGeometry(4,3.4,2),hullC);isl.position.set(3,5.2,3.4);g.add(isl);
+    const stack=new THREE.Mesh(new THREE.CylinderGeometry(.6,.8,2.6,8),lambert(0x333a42));stack.position.set(1,6,3.4);g.add(stack);
+  } else if(type==='bb'){ L=22;
+    const hull=new THREE.Mesh(new THREE.BoxGeometry(22,3,5.5),hullC);hull.position.y=1.4;g.add(hull);
+    const sup=new THREE.Mesh(new THREE.BoxGeometry(7,4,3),lambert(0x49525e));sup.position.y=4.4;g.add(sup);
+    const mast=new THREE.Mesh(new THREE.CylinderGeometry(.3,.5,5,6),lambert(0x39424e));mast.position.y=8;g.add(mast);
+    for(const tx of [-7.5,-4.5,5,8]){
+      const tur=new THREE.Mesh(new THREE.BoxGeometry(3,1.4,2.6),lambert(0x3c454f));tur.position.set(tx,3.3,0);g.add(tur);
+      const gun=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,3.4,6),lambert(0x2c343c));
+      gun.rotation.z=Math.PI/2; gun.position.set(tx+(tx<0?-2.4:2.4),3.5,0);g.add(gun);
+    }
+  } else if(type==='ca'){ L=16;
+    const hull=new THREE.Mesh(new THREE.BoxGeometry(16,2.4,4),hullC);hull.position.y=1.2;g.add(hull);
+    const sup=new THREE.Mesh(new THREE.BoxGeometry(5,3,2.4),lambert(0x49525e));sup.position.y=3.6;g.add(sup);
+    const tur=new THREE.Mesh(new THREE.BoxGeometry(2.4,1,2),lambert(0x3c454f));tur.position.set(-5.5,2.8,0);g.add(tur);
+  } else if(type==='dd'){ L=11;
+    const hull=new THREE.Mesh(new THREE.BoxGeometry(11,1.8,2.6),hullC);hull.position.y=1;g.add(hull);
+    const sup=new THREE.Mesh(new THREE.BoxGeometry(3,1.8,1.8),lambert(0x49525e));sup.position.y=2.6;g.add(sup);
+  } else if(type==='ap'){ L=14;
+    const hull=new THREE.Mesh(new THREE.BoxGeometry(14,2.6,4.4),lambert(0x5e564c));hull.position.y=1.2;g.add(hull);
+    const sup=new THREE.Mesh(new THREE.BoxGeometry(3.4,2.4,3),lambert(0x6e655a));sup.position.set(-4,3.4,0);g.add(sup);
+  } else if(type==='ss'){ L=12;
+    const hull=new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.2,12,10),lambert(0x39424c));
+    hull.rotation.z=Math.PI/2;hull.position.y=.4;g.add(hull);
+    const tower=new THREE.Mesh(new THREE.BoxGeometry(2.4,1.8,1.2),lambert(0x2e363e));tower.position.y=1.8;g.add(tower);
+  } else if(type==='base'){ L=0; /* island itself */ }
+  // mast flag
+  if(type!=='base'){
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,5,5),lambert(0x666));
+    pole.position.set(-L/2+1,5.4,0);g.add(pole);
+    const flag=new THREE.Mesh(new THREE.PlaneGeometry(4.6,3),
+      new THREE.MeshBasicMaterial({map:FLAGTEX[side],side:THREE.DoubleSide}));
+    flag.position.set(-L/2+1+2.4,7,0);g.add(flag);
+    g.userData.flag=flag;
+    // glowing side ring (selection/ID)
+    const ring=new THREE.Mesh(new THREE.RingGeometry(L*.62,L*.62+1.6,28),
+      new THREE.MeshBasicMaterial({color:SIDEC[side],transparent:true,opacity:.4,side:THREE.DoubleSide}));
+    ring.rotation.x=-Math.PI/2;ring.position.y=.4;g.add(ring);
+    g.userData.ring=ring;
+  } else {
+    const flag=new THREE.Mesh(new THREE.PlaneGeometry(8,5.2),
+      new THREE.MeshBasicMaterial({map:FLAGTEX[side],side:THREE.DoubleSide}));
+    flag.position.set(-20,16,8); g.add(flag);
+    const pole2=new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,14,5),lambert(0x888));
+    pole2.position.set(-24,9,8);g.add(pole2);
+    g.userData.flag=flag;
+  }
+  return g;
+}
+
+/* hp bar sprite */
+function makeHPBar(){
+  const c=document.createElement('canvas');c.width=64;c.height=10;
+  const tex=new THREE.CanvasTexture(c);tex.minFilter=THREE.LinearFilter;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,transparent:true}));
+  sp.scale.set(16,2.5,1);
+  barReg.add(sp);
+  sp.userData.draw=(hp,color)=>{
+    const ctx=c.getContext('2d');ctx.clearRect(0,0,64,10);
+    ctx.fillStyle='rgba(8,14,22,.85)';ctx.fillRect(0,0,64,10);
+    ctx.fillStyle=color;ctx.fillRect(2,2,60*Math.max(0,hp)/100,6);
+    ctx.strokeStyle='rgba(255,255,255,.35)';ctx.strokeRect(.5,.5,63,9);
+    tex.needsUpdate=true;
+  };
+  return sp;
+}
+
+/* heading arrow */
+function makeHeadingArrow(side){
+  const g=new THREE.Group();
+  const mat=new THREE.MeshBasicMaterial({color:SIDEC[side],transparent:true,opacity:.85});
+  const cone=new THREE.Mesh(new THREE.ConeGeometry(3.4,9,4),mat);
+  cone.rotation.x=Math.PI/2; cone.position.z=-30; g.add(cone);
+  for(let i=0;i<3;i++){
+    const seg=new THREE.Mesh(new THREE.BoxGeometry(1.4,.4,4),mat.clone());
+    seg.material.opacity=.55-.13*i; seg.position.z=-22+i*6; g.add(seg);
+  }
+  return g;
+}
+
+/* ---------- build fleets ---------- */
+const fleetObjs={}, allShipMeshes=[];
+const sunkenMarkers=new THREE.Group(); scene.add(sunkenMarkers);
+for(const F of FLEETS){
+  const grp=new THREE.Group(); scene.add(grp);
+  const ships=[];
+  let flagshipL=null;
+  F.ships.forEach((s,idx)=>{
+    const mesh=makeShipMesh(s.type,F.side);
+    const key=F.id+'.'+s.id;
+    const st={key,fleet:F,def:s,mesh,hp:s.hp!=null?s.hp:100,status:'ok',air:s.air||0,
+      frozenT:null,frozenPos:null,sinkStart:null,fireFx:null,gone:false,major:s.hp!=null};
+    mesh.userData.ship=st;
+    mesh.traverse(o=>{o.userData.shipRoot=st;});
+    if(s.type!=='base') {
+      // hp bar for majors (name labels are screen-space DOM, see refreshShipLabels)
+      if(st.major||s.flagOf){
+        const bar=makeHPBar(); bar.position.y=10; mesh.add(bar); st.bar=bar;
+      }
+      grp.add(mesh);
+    } else { st.mesh=midwayGrp; }
+    if(idx===0&&s.type!=='base'){
+      st.arrow=makeHeadingArrow(F.side); grp.add(st.arrow);
+    }
+    ships.push(st); allShipMeshes.push(st);
+  });
+  fleetObjs[F.id]={def:F,grp,ships,pos:new THREE.Vector3(),heading:0};
+}
+function refreshShipLabels(){
+  clearDomGroup('fleet');
+  for(const fid in fleetObjs){
+    const fo=fleetObjs[fid];
+    // fleet banner: name + commander
+    const flagsh=fo.ships.find(s=>s.def.flagOf);
+    let txt=FLEETNAMES[fo.def.name][LANG];
+    if(flagsh&&flagsh.def.flagOf) txt+=' · '+CMDRS[flagsh.def.flagOf][LANG];
+    const by=fid==='base'?34:24;
+    addDomLabel('fleet '+fo.def.side,txt,
+      v=>{v.set(fo.pos.x,by,fo.pos.z);return v;},{tag:'fleet',maxD:2600});
+    // ship name labels (constant 11px, readable at any range)
+    for(const s of fo.ships){
+      if(!(s.major||s.def.flagOf)||s.def.type==='base')continue;
+      addDomLabel('ship',NAMES[s.def.id][LANG],
+        v=>{if(s.gone)return null;s.mesh.getWorldPosition(v);v.y+=8;return v;},
+        {tag:'fleet',maxD:1100});
+    }
+    // sunk markers survive language rebuilds
+    for(const s of fo.ships){
+      if(s.gone&&s.markerPos)
+        addDomLabel('sunk','✕ '+NAMES[s.def.id][LANG],
+          v=>v.copy(s.markerPos),{tag:'fleet',maxD:1600,
+          color:fo.def.side==='us'?'#6aa7d8':'#ff8a7a'});
+    }
+  }
+}
+/* ================= EFFECTS ================= */
+function glowTex(stops){ // radial sprite texture
+  const c=document.createElement('canvas');c.width=c.height=64;
+  const ctx=c.getContext('2d');
+  const g=ctx.createRadialGradient(32,32,0,32,32,32);
+  for(const [o,col] of stops) g.addColorStop(o,col);
+  ctx.fillStyle=g;ctx.fillRect(0,0,64,64);
+  const t=new THREE.CanvasTexture(c);t.minFilter=THREE.LinearFilter;return t;
+}
+const TEX_FIRE=glowTex([[0,'rgba(255,240,180,1)'],[ .25,'rgba(255,150,40,.9)'],[ .6,'rgba(200,50,10,.4)'],[1,'rgba(0,0,0,0)']]);
+const TEX_SMOKE=glowTex([[0,'rgba(60,60,65,.75)'],[ .6,'rgba(40,40,45,.35)'],[1,'rgba(0,0,0,0)']]);
+const TEX_FLASH=glowTex([[0,'rgba(255,255,235,1)'],[ .4,'rgba(255,210,120,.8)'],[1,'rgba(255,150,40,0)']]);
+const TEX_CLOUD=glowTex([[0,'rgba(225,232,240,.85)'],[ .55,'rgba(200,210,225,.4)'],[1,'rgba(0,0,0,0)']]);
+const TEX_FLAK=glowTex([[0,'rgba(90,90,95,.9)'],[ .5,'rgba(70,70,75,.5)'],[1,'rgba(0,0,0,0)']]);
+
+function sprite(tex,scale,color){
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false,
+    blending:tex===TEX_SMOKE||tex===TEX_CLOUD||tex===TEX_FLAK?THREE.NormalBlending:THREE.AdditiveBlending}));
+  if(color)sp.material.color.set(color);
+  sp.scale.set(scale,scale,1); return sp;
+}
+
+const fxList=[]; // {update(dt,age)->false to kill, obj, age, life}
+function addFx(obj,life,update){ scene.add(obj); fxList.push({obj,life,age:0,update}); }
+function stepFx(dt){
+  for(let i=fxList.length-1;i>=0;i--){
+    const f=fxList[i]; f.age+=dt;
+    if(f.age>f.life || f.update(dt,f.age/f.life)===false){
+      scene.remove(f.obj);
+      f.obj.traverse?.(o=>{o.material&&o.material.dispose&&o.material.dispose();});
+      fxList.splice(i,1);
+    }
+  }
+}
+
+/* big explosion at world pos */
+function explode(pos,big=1){
+  const flash=sprite(TEX_FLASH,2,null); flash.position.copy(pos).y+=6;
+  addFx(flash,.9,(dt,k)=>{flash.scale.setScalar(8+90*big*k);flash.material.opacity=1-k;});
+  // shockwave ring
+  const ring=new THREE.Mesh(new THREE.RingGeometry(.8,1,40),
+    new THREE.MeshBasicMaterial({color:0xffcf8a,transparent:true,side:THREE.DoubleSide}));
+  ring.rotation.x=-Math.PI/2; ring.position.copy(pos).y=2;
+  addFx(ring,1.4,(dt,k)=>{ring.scale.setScalar(4+110*big*k);ring.material.opacity=.85*(1-k);});
+  // debris fireballs
+  const n=10+8*big;
+  for(let i=0;i<n;i++){
+    const p=sprite(TEX_FIRE,6+Math.random()*8*big);
+    p.position.copy(pos).y+=4;
+    const v=new THREE.Vector3((Math.random()-.5)*34*big,12+Math.random()*30*big,(Math.random()-.5)*34*big);
+    addFx(p,1+Math.random()*1.2,(dt,k)=>{
+      p.position.addScaledVector(v,dt); v.y-=44*dt;
+      p.material.opacity=1-k; p.scale.setScalar((6+10*big)*(1-k*.4));
+    });
+  }
+  // smoke column kicks
+  for(let i=0;i<6;i++){
+    const s=sprite(TEX_SMOKE,14*big);
+    s.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*10,6,(Math.random()-.5)*10));
+    const vy=6+Math.random()*8;
+    addFx(s,3.2+Math.random()*2,(dt,k)=>{
+      s.position.y+=vy*dt; s.scale.setScalar(14*big*(1+k*2.2)); s.material.opacity=.55*(1-k);
+    });
+  }
+  shakeAmt=Math.min(1.4, shakeAmt+.45*big);
+}
+
+/* persistent fire+smoke on a burning ship: returns emitter handle */
+function fireEmitter(getPos){
+  const h={dead:false,acc:0};
+  h.tick=(dt)=>{
+    if(h.dead)return;
+    h.acc+=dt;
+    while(h.acc> .07){ h.acc-=.07;
+      const base=getPos(); if(!base)return;
+      const f=sprite(TEX_FIRE,8+Math.random()*9);
+      f.position.copy(base).add(new THREE.Vector3((Math.random()-.5)*12,4,(Math.random()-.5)*6));
+      addFx(f,.85,(dt2,k)=>{f.position.y+=15*dt2;f.material.opacity=.95*(1-k);});
+      if(Math.random()<.85){
+        const s=sprite(TEX_SMOKE,13+Math.random()*12);
+        s.position.copy(base).add(new THREE.Vector3((Math.random()-.5)*8,10,(Math.random()-.5)*5));
+        const drift=new THREE.Vector3(9+Math.random()*7,13+Math.random()*8,(Math.random()-.5)*6);
+        addFx(s,6,(dt2,k)=>{s.position.addScaledVector(drift,dt2);s.scale.setScalar(14*(1+k*3.2));s.material.opacity=.6*(1-k);});
+      }
+    }
+  };
+  return h;
+}
+const emitters=[];
+
+/* AA tracers + flak puffs over a fleet under attack */
+function aaBurst(center,radius){
+  for(let i=0;i<5;i++){
+    const ox=(Math.random()-.5)*radius*2, oz=(Math.random()-.5)*radius*2;
+    const from=new THREE.Vector3(center.x+ox,3,center.z+oz);
+    const p=sprite(TEX_FLASH,2.4,'#ffd9a0');
+    p.position.copy(from);
+    const vy=70+Math.random()*40, vx=(Math.random()-.5)*22, vz=(Math.random()-.5)*22;
+    addFx(p,.9,(dt,k)=>{p.position.x+=vx*dt;p.position.y+=vy*dt;p.position.z+=vz*dt;p.material.opacity=1-k;});
+  }
+  for(let i=0;i<3;i++){
+    const fp=sprite(TEX_FLAK,5);
+    fp.position.set(center.x+(Math.random()-.5)*radius*2, 36+Math.random()*26, center.z+(Math.random()-.5)*radius*2);
+    addFx(fp,1.6,(dt,k)=>{fp.scale.setScalar(5+9*k);fp.material.opacity=.8*(1-k);});
+  }
+}
+
+/* ---------- weather: drifting clouds + storm front ---------- */
+const cloudGrp=new THREE.Group(); scene.add(cloudGrp);
+const clouds=[];
+for(let i=0;i<60;i++){
+  const c=sprite(TEX_CLOUD,46+Math.random()*64);
+  c.material.opacity=.16+Math.random()*.16;
+  c.position.set((Math.random()-.5)*2600, 100+Math.random()*46, (Math.random()-.5)*1800);
+  cloudGrp.add(c); clouds.push({s:c,v:4+Math.random()*5});
+}
+/* dense storm cluster NW (hides Nagumo's retreat) */
+const stormGrp=new THREE.Group(); scene.add(stormGrp);
+for(let i=0;i<26;i++){
+  const c=sprite(TEX_CLOUD,70+Math.random()*90);
+  c.material.color.set('#5e6a80'); c.material.opacity=.34;
+  c.position.set(-380+(Math.random()-.5)*420, 92+Math.random()*50, -240+(Math.random()-.5)*300);
+  stormGrp.add(c);
+}
+let lightnTimer=0;
+function stepWeather(dt,time){
+  for(const c of clouds){ c.s.position.x+=c.v*dt; if(c.s.position.x>1300)c.s.position.x=-1300; }
+  // occasional lightning inside storm
+  lightnTimer-=dt;
+  if(lightnTimer<0){ lightnTimer=3+Math.random()*6;
+    const fl=sprite(TEX_FLASH,22,'#cfe0ff');
+    fl.position.set(-380+(Math.random()-.5)*380,95,-240+(Math.random()-.5)*260);
+    addFx(fl,.35,(d,k)=>{fl.material.opacity=.9*(1-k);});
+  }
+}
+
+/* ================= AIRCRAFT STRIKES ================= */
+function planeMesh(side){
+  const g=new THREE.Group();
+  const m=new THREE.MeshBasicMaterial({color:SIDEC[side]});
+  const body=new THREE.Mesh(new THREE.ConeGeometry(.9,4,4),m); body.rotation.x=Math.PI/2; g.add(body);
+  const wing=new THREE.Mesh(new THREE.BoxGeometry(6,.25,1.1),m); g.add(wing);
+  return g;
+}
+const strikeObjs=[];
+for(const S of STRIKES){
+  const grp=new THREE.Group(); grp.visible=false; scene.add(grp);
+  const planes=[];
+  for(let i=0;i<S.n;i++){
+    const p=planeMesh(S.side);
+    // V formation offsets
+    const row=Math.floor((i+1)/2), sideSign=i%2?1:-1;
+    p.userData.off=new THREE.Vector3(sideSign*row*7,(Math.random()-.5)*2, row*8);
+    p.userData.killAt=(S.loss&&((i+1)/S.n)<=S.loss)? .92+Math.random()*.07 : 2;
+    p.userData.dead=false;
+    grp.add(p); planes.push(p);
+  }
+  strikeObjs.push({def:S,grp,planes,prevK:0});
+}
+function fleetWorldPos(id,t){
+  if(id==='base')return new THREE.Vector3(0,0,0);
+  const fo=fleetObjs[id]; return fo?fo.pos.clone():new THREE.Vector3();
+}
+function stepStrikes(t,dt){
+  for(const so of strikeObjs){
+    const S=so.def;
+    const totalDur=S.back? (S.t1-S.t0)*1.45 : (S.t1-S.t0);
+    const k=(t-S.t0)/(S.t1-S.t0); // 1.0 = over target
+    const kAll=(t-S.t0)/totalDur;
+    if(t<S.t0||kAll>1){ so.grp.visible=false; continue; }
+    so.grp.visible=true;
+    const from=fleetWorldPos(S.from,t), to=fleetWorldPos(S.to,t);
+    // out leg then return leg
+    let a,b,phase;
+    if(k<=1){ a=from;b=to;phase=k; } else { a=to;b=from;phase=Math.min(1,(k-1)/.45); }
+    const cruiseH=S.kind==='torp'?14:(S.high?72:46);
+    const pos=new THREE.Vector3().lerpVectors(a,b,phase);
+    // altitude profile: climb, cruise, dive at target
+    let hgt=cruiseH;
+    if(k<=1){
+      if(phase<.12) hgt=8+(cruiseH-8)*(phase/.12);
+      else if(phase>.86&&S.kind==='dive') hgt=cruiseH*(1-(phase-.86)/.14)+10;
+      else if(phase>.86&&S.kind==='torp') hgt=14-((phase-.86)/.14)*8;
+    } else hgt=cruiseH*.8;
+    pos.y=hgt;
+    const dir=new THREE.Vector3().subVectors(b,a); dir.y=0; dir.normalize();
+    const yaw=Math.atan2(dir.x,dir.z);
+    for(const p of so.planes){
+      if(p.userData.dead){p.visible=false;continue;}
+      if(k>=p.userData.killAt&&k<=1.05){ // shot down: spiral splash
+        p.userData.dead=true; p.visible=false;
+        const dp=pos.clone().add(p.userData.off.clone().applyAxisAngle(new THREE.Vector3(0,1,0),yaw));
+        const fall=sprite(TEX_FIRE,5); fall.position.copy(dp);
+        const vx=(Math.random()-.5)*20,vz=(Math.random()-.5)*20;
+        addFx(fall,1.3,(d2,kk)=>{fall.position.x+=vx*d2;fall.position.z+=vz*d2;
+          fall.position.y=Math.max(2,dp.y*(1-kk*kk)); fall.material.opacity=1-kk*.7;
+          if(kk>.97)explodeSplash(fall.position);});
+        continue;
+      }
+      const off=p.userData.off.clone().applyAxisAngle(new THREE.Vector3(0,1,0),yaw);
+      p.position.copy(pos).add(off);
+      p.position.y+=Math.sin(performance.now()*.002+off.x)*1.2;
+      p.rotation.y=yaw;
+      p.rotation.z=Math.sin(performance.now()*.0015+off.x)*.15;
+    }
+    // AA when near target (outbound only)
+    if(k>.8&&k<1.05&&Math.random()<dt*8) aaBurst(to,40);
+    // arrival flash for torpedo wakes
+    if(so.prevK<1&&k>=1&&S.kind==='torp'){
+      const wk=new THREE.Mesh(new THREE.PlaneGeometry(30,1.2),
+        new THREE.MeshBasicMaterial({color:0xbfe8ff,transparent:true}));
+      wk.rotation.x=-Math.PI/2; wk.position.copy(to).y=2.5;
+      addFx(wk,1.6,(d2,kk)=>{wk.material.opacity=.8*(1-kk);wk.scale.x=1+kk*.5;});
+    }
+    so.prevK=k;
+  }
+}
+function explodeSplash(pos){
+  const sp=sprite(TEX_CLOUD,6,'#cfe6f5'); sp.position.copy(pos).y=3;
+  addFx(sp,.9,(d,k)=>{sp.scale.setScalar(6+10*k);sp.material.opacity=.8*(1-k);});
+}
+/* ================= SIMULATION ================= */
+function trackPos(track,t,out){
+  if(t<=track[0][0]){out.set(track[0][1],0,track[0][2]);return out;}
+  for(let i=0;i<track.length-1;i++){
+    const a=track[i],b=track[i+1];
+    if(t>=a[0]&&t<=b[0]){
+      const k=(b[0]-a[0])<1e-6?0:(t-a[0])/(b[0]-a[0]);
+      const e=k*k*(3-2*k); // smoothstep
+      out.set(a[1]+(b[1]-a[1])*e,0,a[2]+(b[2]-a[2])*e); return out;
+    }
+  }
+  const L=track[track.length-1]; out.set(L[1],0,L[2]); return out;
+}
+function trackHeading(track,t){
+  const p1=trackPos(track,t,new THREE.Vector3()), p2=trackPos(track,t+ .4,new THREE.Vector3());
+  const dx=p2.x-p1.x,dz=p2.z-p1.z;
+  if(Math.abs(dx)+Math.abs(dz)<1e-4)return null;
+  return Math.atan2(dx,dz);
+}
+
+let simT=T_START, playing=false, speedMul=1;
+let appliedDmg=new Set(), appliedAir=new Set(), firedEvents=new Set();
+
+function bobY(x,z,time){ // ride the waves slightly
+  return 2.6+Math.sin(x*.012+time*.7)*1.1+Math.cos(z*.016+time*.55)*.9;
+}
+
+function updateFleets(t,time,dt){
+  for(const fid in fleetObjs){
+    const fo=fleetObjs[fid];
+    trackPos(fo.def.track,t,fo.pos);
+    const hd=trackHeading(fo.def.track,t);
+    if(hd!=null)fo.heading=fo.heading+( ((hd-fo.heading+Math.PI*3)%(Math.PI*2))-Math.PI )*Math.min(1,dt*2);
+    fo.grp.position.set(fo.pos.x,0,fo.pos.z);
+    let moving=hd!=null;
+    for(const s of fo.ships){
+      if(s.def.fixed)continue;
+      const m=s.mesh;
+      if(s.frozenPos){ // detached from formation (dead in water / sinking)
+        m.position.set(s.frozenPos.x-fo.pos.x,m.position.y,s.frozenPos.z-fo.pos.z);
+      } else {
+        m.position.x=s.def.off[0]; m.position.z=s.def.off[1];
+        m.rotation.y=fo.heading+Math.PI/2; // hull長軸沿航向
+      }
+      if(s.status==='sink'&&s.sinkStart!=null){
+        const sk=Math.min(1,(time-s.sinkStart)/14);
+        m.position.y=bobY(fo.pos.x,fo.pos.z,time)-sk*16;
+        m.rotation.z=sk*.85; m.rotation.x=sk*.3;
+        if(sk>=1&&!s.gone){shipGone(s,fo);}
+      } else if(s.status==='sunk'){ /* removed */ }
+      else m.position.y=bobY(fo.pos.x+m.position.x,fo.pos.z+m.position.z,time);
+      // wake foam for moving fleets
+    }
+    // heading arrow
+    const lead=fo.ships[0];
+    if(lead&&lead.arrow){
+      lead.arrow.visible=moving&&!lead.frozenPos&&lead.status!=='sunk';
+      lead.arrow.rotation.y=fo.heading;
+      lead.arrow.position.set(0,3,0);
+    }
+  }
+}
+function shipGone(s,fo){
+  s.gone=true; s.mesh.visible=false;
+  if(s.fireFx)s.fireFx.dead=true;
+  // sunk marker ✕ + name (screen-space label)
+  const wx=fo.pos.x+s.mesh.position.x, wz=fo.pos.z+s.mesh.position.z;
+  s.markerPos=new THREE.Vector3(wx,4,wz);
+  addDomLabel('sunk','✕ '+NAMES[s.def.id][LANG],
+    v=>v.copy(s.markerPos),{tag:'fleet',maxD:1600,
+    color:fo.def.side==='us'?'#6aa7d8':'#ff8a7a'});
+}
+function applyDamage(t){
+  for(let i=0;i<DAMAGE.length;i++){
+    const [dt0,key,hp,st]=DAMAGE[i];
+    if(t>=dt0&&!appliedDmg.has(i)){
+      appliedDmg.add(i);
+      const [fid,sid]=key.split('.');
+      const fo=fleetObjs[fid]; const s=fo.ships.find(x=>x.def.id===sid);
+      if(!s)continue;
+      const wasOk=s.status==='ok';
+      s.hp=hp; s.status=st;
+      if((st==='dmg'||st==='sunk')&&s.fireFx){s.fireFx.dead=true;s.fireFx=null;}
+      if(st==='fire'||st==='sink'||(st==='dmg'&&wasOk)){
+        const wp=new THREE.Vector3(fo.pos.x+s.mesh.position.x,0,fo.pos.z+s.mesh.position.z);
+        if(s.def.type==='base') wp.set(0,0,0);
+        explode(wp, st==='fire'?1.4:1);
+      }
+      if(st==='fire'&&!s.fireFx){
+        s.fireFx=fireEmitter(()=>{
+          if(s.gone)return null;
+          if(s.def.type==='base')return new THREE.Vector3(0,5,4);
+          return new THREE.Vector3(fleetObjs[fid].pos.x+s.mesh.position.x, s.mesh.position.y+3, fleetObjs[fid].pos.z+s.mesh.position.z);
+        });
+        emitters.push(s.fireFx);
+      }
+      if(st==='sink'){
+        s.sinkStart=perfTime;
+        if(!s.frozenPos){const fo2=fleetObjs[fid];
+          s.frozenPos=new THREE.Vector3(fo2.pos.x+s.mesh.position.x,0,fo2.pos.z+s.mesh.position.z);}
+      }
+      if(st==='sunk'){
+        if(s.fireFx)s.fireFx.dead=true;
+        if(!s.gone){ if(!s.frozenPos){const fo2=fleetObjs[fid];
+            s.frozenPos=new THREE.Vector3(fo2.pos.x+s.mesh.position.x,0,fo2.pos.z+s.mesh.position.z);}
+          shipGone(s,fo); }
+      }
+      // Yorktown dead in water after first hits: freeze position
+      if(key==='tf17.yorktown'&&st==='dmg'&&!s.frozenPos){
+        s.frozenPos=new THREE.Vector3(fo.pos.x+s.mesh.position.x,0,fo.pos.z+s.mesh.position.z);
+      }
+      updateForcesPanel(); updateBars();
+    }
+  }
+  for(let i=0;i<AIRLOSS.length;i++){
+    const [at,key,n]=AIRLOSS[i];
+    if(t>=at&&!appliedAir.has(i)){
+      appliedAir.add(i);
+      const [fid,sid]=key.split('.');
+      const s=fleetObjs[fid].ships.find(x=>x.def.id===sid);
+      if(s){s.air=n; updateForcesPanel();}
+    }
+  }
+}
+function resetSim(){
+  appliedDmg.clear();appliedAir.clear();firedEvents.clear();
+  sunkenMarkers.clear();
+  for(const e of emitters)e.dead=true;
+  for(const fid in fleetObjs)for(const s of fleetObjs[fid].ships){
+    s.hp=s.def.hp!=null?s.def.hp:100; s.status='ok'; s.air=s.def.air||0;
+    s.frozenPos=null;s.sinkStart=null;s.gone=false;s.fireFx=null;s.markerPos=null;
+    s.mesh.visible=true; s.mesh.rotation.z=0;s.mesh.rotation.x=0;
+  }
+  refreshShipLabels();
+  for(const so of strikeObjs){so.prevK=0;for(const p of so.planes){p.userData.dead=false;p.visible=true;}}
+  updateForcesPanel();updateBars();
+  document.getElementById('outcome').classList.remove('show');
+  outcomeShown=false;
+}
+
+/* ================= CAMERA ================= */
+let camMode='cine'; // cine | free | top
+let shakeAmt=0;
+const camCur={pos:new THREE.Vector3(120,210,210),tgt:new THREE.Vector3(0,0,0)};
+const camGoal={pos:camCur.pos.clone(),tgt:camCur.tgt.clone()};
+let cineDrift=0;
+
+/* free orbit control (custom) */
+const orbit={theta:.6,phi:.95,dist:330,center:new THREE.Vector3(0,0,0),drag:false,pan:false,lx:0,ly:0};
+canvas.addEventListener('pointerdown',e=>{
+  orbit.drag=true; orbit.pan=(e.button===2||e.shiftKey);
+  orbit.lx=e.clientX;orbit.ly=e.clientY;
+  if(camMode==='cine')setCamMode('free'); // grabbing the view exits cinematic
+});
+addEventListener('pointerup',()=>orbit.drag=false);
+addEventListener('pointermove',e=>{
+  if(!orbit.drag)return;
+  const dx=e.clientX-orbit.lx, dy=e.clientY-orbit.ly; orbit.lx=e.clientX;orbit.ly=e.clientY;
+  if(orbit.pan){
+    const s=orbit.dist*.0014;
+    const fwd=new THREE.Vector3(Math.sin(orbit.theta),0,Math.cos(orbit.theta));
+    const rgt=new THREE.Vector3(fwd.z,0,-fwd.x);
+    orbit.center.addScaledVector(rgt,dx*s).addScaledVector(fwd,dy*s);
+  } else {
+    orbit.theta-=dx*.005; orbit.phi=Math.max(.12,Math.min(1.45,orbit.phi-dy*.004));
+  }
+});
+canvas.addEventListener('wheel',e=>{
+  e.preventDefault();
+  orbit.dist=Math.max(40,Math.min(1800,orbit.dist*(1+Math.sign(e.deltaY)*.09)));
+  if(camMode==='cine')setCamMode('free');
+},{passive:false});
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+
+function syncOrbitFromCam(){
+  const d=new THREE.Vector3().subVectors(camCur.pos,camCur.tgt);
+  orbit.dist=d.length();
+  orbit.theta=Math.atan2(d.x,d.z);
+  orbit.phi=Math.acos(Math.max(-1,Math.min(1,d.y/orbit.dist)));
+  orbit.center.copy(camCur.tgt);
+}
+function setCamMode(m){
+  if(camMode===m)return;
+  camMode=m;
+  document.querySelectorAll('.cam').forEach(b=>b.classList.remove('on'));
+  ({cine:'camCine',free:'camFree',top:'camTop'})[m]&&document.getElementById(({cine:'camCine',free:'camFree',top:'camTop'})[m]).classList.add('on');
+  document.body.classList.toggle('cine', m==='cine'&&playing);
+  if(m==='free')syncOrbitFromCam();
+}
+function setCamGoalFromEvent(ev){
+  const [cx,cy,cz,tx,tz]=ev.cam;
+  camGoal.pos.set(cx,cy,cz); camGoal.tgt.set(tx,4,tz);
+}
+function stepCamera(dt,time){
+  if(camMode==='free'){
+    const sp=Math.sin(orbit.phi),y=Math.cos(orbit.phi);
+    camCur.pos.set(orbit.center.x+orbit.dist*sp*Math.sin(orbit.theta),
+                   orbit.center.y+orbit.dist*y,
+                   orbit.center.z+orbit.dist*sp*Math.cos(orbit.theta));
+    camCur.tgt.copy(orbit.center);
+  } else if(camMode==='top'){
+    camGoal.pos.set(camCur.tgt.x+1, 760, camCur.tgt.z+1);
+    // keep target on most interesting current focus
+    const k=Math.min(1,dt*2.2);
+    camCur.pos.lerp(camGoal.pos,k); camCur.tgt.lerp(camGoal.tgt,k);
+  } else { // cinematic: ease toward goal + slow orbital drift
+    cineDrift+=dt*.12;
+    const r=new THREE.Vector3().subVectors(camGoal.pos,camGoal.tgt);
+    const rot=r.clone().applyAxisAngle(new THREE.Vector3(0,1,0),Math.sin(cineDrift)*.35);
+    const p=new THREE.Vector3().addVectors(camGoal.tgt,rot);
+    p.y+=Math.sin(cineDrift*.7)*8;
+    const k=Math.min(1,dt*1.4);
+    camCur.pos.lerp(p,k); camCur.tgt.lerp(camGoal.tgt,k);
+  }
+  // shake decay
+  shakeAmt*=Math.pow(.06,dt);
+  const sx=(Math.random()-.5)*shakeAmt*6,sy=(Math.random()-.5)*shakeAmt*5;
+  camera.position.copy(camCur.pos).add(new THREE.Vector3(sx,sy,sx*.7));
+  camera.lookAt(camCur.tgt.x,camCur.tgt.y+sy*.4,camCur.tgt.z);
+}
+/* ================= UI ================= */
+const $=id=>document.getElementById(id);
+function applyI18N(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const v=I18N[LANG][el.dataset.i18n]; if(typeof v==='string')el.innerHTML=v;
+  });
+  $('langBtn').textContent = LANG==='zh' ? 'EN | 中文' : 'EN | 中文';
+  document.documentElement.lang = LANG==='zh'?'zh-Hant':'en';
+  buildPlaceLabels(); refreshShipLabels(); buildForcesPanel(); buildTicks(); updateClock();
+  buildOutcomeLists();
+  if(typeof ccOn!=='undefined'){curNarr=-99;refreshCcBtn();}
+  if(curEvent)showEventCard(curEvent);
+}
+$('langBtn').onclick=()=>{LANG=LANG==='zh'?'en':'zh';applyI18N();};
+
+/* ----- forces panel ----- */
+const MAJOR_TRACKED=[
+ ['us','tf16.enterprise'],['us','tf16.hornet'],['us','tf17.yorktown'],['us','base.midwayBase'],
+ ['jp','kb.akagi'],['jp','kb.kaga'],['jp','kb.soryu'],['jp','hiryuF.hiryu'],['jp','cs7.mikuma'],
+];
+function getShip(key){const [f,s]=key.split('.');return fleetObjs[f].ships.find(x=>x.def.id===s);}
+function miniFlag(side){
+  const c=document.createElement('canvas');c.width=44;c.height=28;c.className='flagchip';
+  side==='us'?drawUSFlag(c.getContext('2d'),44,28):drawJPFlag(c.getContext('2d'),44,28);
+  return c;
+}
+function buildForcesPanel(){
+  const mk=(side,host,cmdr)=>{
+    host.innerHTML='';
+    const h=document.createElement('div');h.className='side-h '+side;
+    h.appendChild(miniFlag(side));
+    const t=document.createElement('span');
+    t.textContent=(side==='us'?T('usnavy'):T('ijn'));
+    h.appendChild(t);host.appendChild(h);
+    const c=document.createElement('div');c.className='airrow';
+    c.innerHTML='★ '+CMDRS[cmdr][LANG];host.appendChild(c);
+    for(const [sd,key] of MAJOR_TRACKED){
+      if(sd!==side)continue;
+      const s=getShip(key);
+      const row=document.createElement('div');row.className='shiprow '+side;row.dataset.key=key;
+      row.innerHTML=`<span class="nm">${NAMES[s.def.id][LANG]}</span>
+        <span class="hpbar"><i style="width:${s.hp}%"></i></span>
+        <span class="st ${s.status}">${T('statuses')[s.status]}</span>`;
+      row.onclick=()=>focusShip(s);
+      host.appendChild(row);
+      const ar=document.createElement('div');ar.className='airrow airct';ar.dataset.key=key;
+      ar.innerHTML=`&nbsp;&nbsp;✈ ${T('aircraft')}: <b>${s.air}</b>`;
+      host.appendChild(ar);
+    }
+  };
+  mk('us',$('forcesUS'),'nimitz'); mk('jp',$('forcesJP'),'yamamoto');
+}
+function updateForcesPanel(){
+  document.querySelectorAll('.shiprow').forEach(row=>{
+    const s=getShip(row.dataset.key);
+    row.querySelector('.hpbar i').style.width=s.hp+'%';
+    const st=row.querySelector('.st');st.className='st '+s.status;st.textContent=T('statuses')[s.status];
+  });
+  document.querySelectorAll('.airct').forEach(ar=>{
+    const s=getShip(ar.dataset.key);
+    ar.innerHTML=`&nbsp;&nbsp;✈ ${T('aircraft')}: <b>${s.air}</b>`;
+  });
+}
+function updateBars(){
+  for(const fid in fleetObjs)for(const s of fleetObjs[fid].ships){
+    if(s.bar)s.bar.userData.draw(s.hp, s.hp>55?'#62d177':s.hp>25?'#ffc04d':'#ff5546');
+  }
+}
+
+/* ----- timeline ----- */
+const tlEl=$('timeline');
+function tFrac(t){return (t-T_START)/(T_END-T_START);}
+function buildTicks(){
+  const host=$('tlTicks');host.innerHTML='';
+  EVENTS.forEach((ev,i)=>{
+    const d=document.createElement('div');
+    d.className='tlTick '+ev.type;d.style.left=(tFrac(ev.t)*100)+'%';
+    d.title=ev.title[LANG];
+    d.onclick=e=>{e.stopPropagation();seekTo(ev.t-.4);playing=true;updatePlayBtn();};
+    host.appendChild(d);
+  });
+  // day markers
+  [[24,'6/4'],[48,'6/5'],[72,'6/6'],[96,'6/7']].forEach(([h,lab])=>{
+    const d=document.createElement('div');d.className='tlDay';d.style.left=(tFrac(h)*100)+'%';d.textContent=lab;
+    host.appendChild(d);
+  });
+}
+let scrubbing=false;
+tlEl.addEventListener('pointerdown',e=>{scrubbing=true;scrub(e);});
+addEventListener('pointermove',e=>{if(scrubbing)scrub(e);});
+addEventListener('pointerup',()=>scrubbing=false);
+function scrub(e){
+  const r=tlEl.getBoundingClientRect();
+  const k=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+  seekTo(T_START+k*(T_END-T_START));
+}
+function seekTo(t){
+  if(t<simT){ resetSim(); simT=T_START; }
+  // fast-forward state silently
+  const silent=t-simT>2;
+  simT=t;
+  applyDamage(simT);
+  if(silent){ // mark passed events as fired without banners
+    for(const ev of EVENTS)if(ev.t<=simT-1.5)firedEvents.add(ev.id);
+    // settle sinking ships instantly
+    for(const fid in fleetObjs)for(const s of fleetObjs[fid].ships){
+      if(s.status==='sink'&&s.sinkStart!=null)s.sinkStart=perfTime-99;
+    }
+  }
+}
+function updateTimelineUI(){
+  const k=tFrac(simT);
+  $('tlFill').style.width=(k*100)+'%';
+  $('tlHead').style.left=(k*100)+'%';
+  document.querySelectorAll('.tlTick').forEach((d,i)=>{
+    d.classList.toggle('passed',EVENTS[i]&&EVENTS[i].t<simT-1);
+  });
+}
+
+/* ----- clock + weather ----- */
+const MONTH={en:'JUNE',zh:'6月'};
+function updateClock(){
+  const day=3+Math.floor(simT/24), hh=Math.floor(simT%24), mm=Math.floor((simT%1)*60);
+  $('clkDate').textContent=LANG==='zh'?`1942年 ${MONTH.zh}${day}日`:`${MONTH.en} ${day} 1942`;
+  $('clkTime').textContent=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+  let wi=0;for(const [tt,ii] of WXPHASE)if(simT>=tt)wi=ii;
+  $('clkWx').textContent='☁ '+T('wx')[wi];
+}
+
+/* ----- events ----- */
+let curEvent=null, eventHideAt=0, stratHideAt=0;
+function fireEvent(ev){
+  firedEvents.add(ev.id);
+  curEvent=ev; showEventCard(ev);
+  eventHideAt=perfTime+11;
+  if(camMode==='cine')setCamGoalFromEvent(ev);
+  if(ev.strat){
+    $('sfName').textContent=ev.strat[LANG];
+    $('sfEff').textContent=ev.eff[LANG];
+    $('stratFlash').classList.add('show');
+    stratHideAt=perfTime+4.2;
+  }
+}
+function showEventCard(ev){
+  const day=3+Math.floor(ev.t/24),hh=Math.floor(ev.t%24),mm=Math.round((ev.t%1)*60);
+  $('evDate').textContent=LANG==='zh'?`6月${day}日`:`JUN ${day}`;
+  $('evTime').textContent=String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+  const tagNames={battle:{en:'BATTLE',zh:'戰鬥'},strategy:{en:'STRATAGEM',zh:'計策'},intel:{en:'INTELLIGENCE',zh:'情報'},info:{en:'EVENT',zh:'事件'}};
+  const tg=$('evTag');tg.className='tag '+ev.type;tg.textContent=tagNames[ev.type][LANG];
+  $('evTitle').textContent=ev.title[LANG];
+  $('evDesc').textContent=ev.desc[LANG];
+  $('evCmd').textContent='★ '+CMDRS[ev.cmd][LANG];
+  $('eventCard').classList.add('show');
+}
+
+/* ----- ship picking ----- */
+const ray=new THREE.Raycaster(), ptr=new THREE.Vector2();
+let downXY=null;
+canvas.addEventListener('pointerdown',e=>{downXY=[e.clientX,e.clientY];});
+canvas.addEventListener('pointerup',e=>{
+  if(!downXY)return;
+  const moved=Math.hypot(e.clientX-downXY[0],e.clientY-downXY[1]); downXY=null;
+  if(moved>6)return;
+  ptr.x=(e.clientX/innerWidth)*2-1; ptr.y=-(e.clientY/innerHeight)*2+1;
+  ray.setFromCamera(ptr,camera);
+  const meshes=[];
+  for(const st of allShipMeshes)if(st.mesh.visible&&st.def.type!=='base')meshes.push(st.mesh);
+  const hits=ray.intersectObjects(meshes,true);
+  if(hits.length){
+    const st=hits[0].object.userData.shipRoot||hits[0].object.parent?.userData?.ship;
+    if(st){showShipCard(st,e.clientX,e.clientY);return;}
+  }
+  $('shipCard').classList.remove('show');
+});
+function showShipCard(s,px,py){
+  const card=$('shipCard');
+  $('scCls').textContent=T('classes')[s.def.type];
+  $('scCls').style.color=s.fleet.side==='us'?'var(--us)':'var(--jp)';
+  $('scName').textContent=NAMES[s.def.id][LANG];
+  $('scCmdV').textContent=s.def.flagOf?CMDRS[s.def.flagOf][LANG]:'—';
+  $('scFleetV').textContent=FLEETNAMES[s.fleet.name][LANG];
+  $('scStatusV').textContent=T('statuses')[s.status];
+  $('scHPV').textContent=s.major?Math.round(s.hp)+' / 100':'—';
+  const bar=$('scHPBar');bar.style.width=s.hp+'%';
+  bar.style.background=s.hp>55?'#62d177':s.hp>25?'#ffc04d':'#ff5546';
+  card.style.left=Math.min(innerWidth-270,px+14)+'px';
+  card.style.top=Math.min(innerHeight-220,py-20)+'px';
+  card.classList.add('show');
+}
+$('scClose').onclick=()=>$('shipCard').classList.remove('show');
+function focusShip(s){
+  const fo=fleetObjs[s.fleet.id];
+  setCamMode('free');
+  orbit.center.set(fo.pos.x+s.mesh.position.x,4,fo.pos.z+s.mesh.position.z);
+  orbit.dist=120;
+}
+
+/* ----- controls ----- */
+function updatePlayBtn(){$('playBtn').textContent=playing?'❚❚':'▶';
+  document.body.classList.toggle('cine',camMode==='cine'&&playing);}
+$('playBtn').onclick=()=>{playing=!playing;updatePlayBtn();};
+document.querySelectorAll('.spd').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.spd').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');speedMul=+b.dataset.spd;
+});
+/* ----- narration subtitles ----- */
+let ccOn=true, curNarr=-99;
+function refreshCcBtn(){
+  $('ccBtn').textContent=ccOn?T('cc'):T('ccOff');
+  $('ccBtn').classList.toggle('on',ccOn);
+  $('subt').classList.toggle('off',!ccOn);
+}
+$('ccBtn').onclick=()=>{ccOn=!ccOn;refreshCcBtn();};
+function updateNarr(){
+  let idx=-1;
+  for(let i=0;i<NARR.length;i++)if(simT>=NARR[i][0]&&simT<NARR[i][1]){idx=i;break;}
+  if(idx!==curNarr){
+    curNarr=idx;
+    $('subtText').textContent=idx<0?'':NARR[idx][2][LANG];
+    $('subt').style.visibility=idx<0?'hidden':'visible';
+  }
+}
+
+$('camCine').onclick=()=>{setCamMode('cine');updatePlayBtn();if(curEvent)setCamGoalFromEvent(curEvent);};
+$('camFree').onclick=()=>setCamMode('free');
+$('camTop').onclick=()=>{setCamMode('top');};
+addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();playing=!playing;updatePlayBtn();}
+});
+$('btnAuto').onclick=()=>{
+  $('intro').classList.add('gone');
+  playing=true;setCamMode('cine');updatePlayBtn();
+};
+$('btnFree').onclick=()=>{
+  $('intro').classList.add('gone');
+  playing=true;setCamMode('free');syncOrbitFromCam();updatePlayBtn();
+};
+$('btnReplay').onclick=()=>{
+  $('outcome').classList.remove('show');
+  resetSim();simT=T_START;playing=true;setCamMode('cine');updatePlayBtn();
+};
+$('btnExplore').onclick=()=>{$('outcome').classList.remove('show');outcomeShown=true;setCamMode('free');};
+
+/* ----- outcome ----- */
+let outcomeShown=false;
+function buildOutcomeLists(){
+  const us={en:["Carrier USS Yorktown","Destroyer USS Hammann","~150 aircraft · 307 men"],
+            zh:["航空母艦 約克鎮號","驅逐艦 哈曼號","約150架飛機 · 307人陣亡"]};
+  const jp={en:["Carriers Akagi · Kaga · Sōryū · Hiryū","Heavy cruiser Mikuma","~248 aircraft · 3,057 men"],
+            zh:["航艦 赤城·加賀·蒼龍·飛龍","重巡洋艦 三隈","約248架飛機 · 3,057人陣亡"]};
+  $('outUSl').innerHTML=us[LANG].map(x=>`<li>▸ ${x}</li>`).join('');
+  $('outJPl').innerHTML=jp[LANG].map(x=>`<li>▸ ${x}</li>`).join('');
+}
+function maybeOutcome(){
+  if(!outcomeShown&&simT>=T_END-.5){
+    outcomeShown=true;playing=false;updatePlayBtn();
+    $('outcome').classList.add('show');
+  }
+}
+
+/* ================= MAIN LOOP ================= */
+let perfTime=0,lastMs=performance.now();
+function adaptiveRate(t){
+  let near=99;
+  for(const ev of EVENTS){const d=Math.abs(ev.t-t);if(d<near)near=d;}
+  // also slow while strikes in the air
+  let strikeNear=false;
+  for(const S of STRIKES)if(t>S.t0-.3&&t<S.t1+.8)strikeNear=true;
+  if(near<1.2||strikeNear)return .28;
+  if(near<3)return 1.1;
+  return 3.2;
+}
+function frame(ms){
+  requestAnimationFrame(frame);
+  const dt=Math.min(.05,(ms-lastMs)/1000);lastMs=ms;perfTime+=dt;
+  if(playing&&simT<T_END){
+    simT+=dt*adaptiveRate(simT)*speedMul;
+    if(simT>T_END)simT=T_END;
+  }
+  // fire events
+  for(const ev of EVENTS){
+    if(simT>=ev.t&&!firedEvents.has(ev.id)){fireEvent(ev);break;}
+  }
+  if(curEvent&&perfTime>eventHideAt){$('eventCard').classList.remove('show');}
+  if(perfTime>stratHideAt)$('stratFlash').classList.remove('show');
+  applyDamage(simT);
+  animOcean(perfTime);
+  updateFleets(simT,perfTime,dt);
+  stepStrikes(simT,dt);
+  stepWeather(dt,perfTime);
+  for(let i=emitters.length-1;i>=0;i--){
+    if(emitters[i].dead)emitters.splice(i,1);else emitters[i].tick(dt);
+  }
+  stepFx(dt);
+  stepCamera(dt,perfTime);
+  updateLabels();
+  updateDomLabels();
+  updateNarr();
+  updateTimelineUI();updateClock();
+  maybeOutcome();
+  renderer.render(scene,camera);
+}
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+/* ----- boot ----- */
+applyI18N();
+updateBars();
+resetSim();
+seekTo(T_START);
+setCamGoalFromEvent(EVENTS[0]);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
