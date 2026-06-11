@@ -345,7 +345,7 @@ body.cine #legend{transform:translateX(115%);opacity:0}
     <button class="dbtn cam" id="camFree" data-i18n="camFree"></button>
     <button class="dbtn cam" id="camTop" data-i18n="camTop"></button>
     <span class="hint" data-i18n="deckHint"></span>
-    <span style="font-family:var(--font-mono);font-size:9px;color:var(--gold);letter-spacing:.1em">v1.3</span>
+    <span style="font-family:var(--font-mono);font-size:9px;color:var(--gold);letter-spacing:.1em">v1.4</span>
   </div>
 </div>
 
@@ -637,11 +637,11 @@ const EVENTS = [
   title:{en:"Mogami and Mikuma collide",zh:"最上、三隈相撞"},
   desc:{en:"Dodging submarine Tambor in the dark, cruisers Mogami and Mikuma collide. Crippled and trailing oil, they limp west — straight into tomorrow's air strikes.",
         zh:"為閃避美潛艦「鼓魚號」,最上與三隈黑夜中相撞。兩艦重創拖油西逃——正撞上隔日的空襲。"}},
- {t:84.0,id:'e_mikuma',type:'battle',cmd:'spruance',focus:[-520,150],cam:[-520,110,260,-520,150],
+ {t:84.0,id:'e_mikuma',type:'battle',cmd:'spruance',focus:[-520,150],cam:[-520,110,260,-520,150],lead:2.6,
   title:{en:"Mikuma pounded under",zh:"三隈沉沒"},
   desc:{en:"June 6 — Dive bombers from Enterprise and Hornet smash the crippled cruisers. Mikuma sinks; Mogami, gutted, barely escapes.",
         zh:"6月6日 — 企業號與大黃蜂號的俯衝轟炸機痛擊跛行的巡洋艦。三隈沉沒,最上重創僅以身免。"}},
- {t:87.0,id:'e_i168',type:'battle',cmd:'tanabe',focus:[156,-182],cam:[190,50,-120,156,-182],
+ {t:87.0,id:'e_i168',type:'battle',cmd:'tanabe',focus:[156,-182],cam:[190,50,-120,156,-182],lead:2.2,
   title:{en:"I-168 finds Yorktown",zh:"伊-168獵殺約克鎮"},
   desc:{en:"June 6, 13:36 — Submarine I-168 slips through the destroyer screen and torpedoes the salvage-bound Yorktown and destroyer Hammann.",
         zh:"6月6日 13:36 — 伊-168潛艦穿越驅逐艦幕,魚雷命中搶救中的約克鎮號及驅逐艦哈曼號。"}},
@@ -1476,7 +1476,7 @@ const CAM_LEAD=1.1;
 function updateCineCam(){
   if(camMode!=='cine')return;
   let target=null;
-  for(const ev of EVENTS){ if(simT>=ev.t-CAM_LEAD) target=ev; else break; }
+  for(const ev of EVENTS){ if(simT>=ev.t-(ev.lead||CAM_LEAD)) target=ev; }
   if(target&&camEvId!==target.id){ camEvId=target.id; setCamGoalFromEvent(target); }
 }
 function stepCamera(dt,time){
