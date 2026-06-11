@@ -345,7 +345,7 @@ body.cine #legend{transform:translateX(115%);opacity:0}
     <button class="dbtn cam" id="camFree" data-i18n="camFree"></button>
     <button class="dbtn cam" id="camTop" data-i18n="camTop"></button>
     <span class="hint" data-i18n="deckHint"></span>
-    <span style="font-family:var(--font-mono);font-size:9px;color:var(--gold);letter-spacing:.1em">v1.2</span>
+    <span style="font-family:var(--font-mono);font-size:9px;color:var(--gold);letter-spacing:.1em">v1.3</span>
   </div>
 </div>
 
@@ -1413,7 +1413,7 @@ function resetSim(){
   for(const so of strikeObjs){so.prevK=0;for(const p of so.planes){p.userData.dead=false;p.visible=true;}}
   updateForcesPanel();updateBars();
   document.getElementById('outcome').classList.remove('show');
-  outcomeShown=false;
+  outcomeShown=false; camEvId=null;
 }
 
 /* ================= CAMERA ================= */
@@ -1468,6 +1468,16 @@ function setCamMode(m){
 function setCamGoalFromEvent(ev){
   const [cx,cy,cz,tx,tz]=ev.cam;
   camGoal.pos.set(cx,cy,cz); camGoal.tgt.set(tx,4,tz);
+}
+/* cinematic look-ahead: fly to the NEXT event's location ~1.1h (≈4s) early,
+   so the viewer is already on scene when it happens */
+let camEvId=null;
+const CAM_LEAD=1.1;
+function updateCineCam(){
+  if(camMode!=='cine')return;
+  let target=null;
+  for(const ev of EVENTS){ if(simT>=ev.t-CAM_LEAD) target=ev; else break; }
+  if(target&&camEvId!==target.id){ camEvId=target.id; setCamGoalFromEvent(target); }
 }
 function stepCamera(dt,time){
   if(camMode==='free'){
@@ -1631,7 +1641,6 @@ function fireEvent(ev){
   firedEvents.add(ev.id);
   curEvent=ev; showEventCard(ev);
   eventHideAt=perfTime+11;
-  if(camMode==='cine')setCamGoalFromEvent(ev);
   if(ev.strat){
     $('sfName').textContent=ev.strat[LANG];
     $('sfEff').textContent=ev.eff[LANG];
@@ -1719,7 +1728,7 @@ function updateNarr(){
   }
 }
 
-$('camCine').onclick=()=>{setCamMode('cine');updatePlayBtn();if(curEvent)setCamGoalFromEvent(curEvent);};
+$('camCine').onclick=()=>{setCamMode('cine');updatePlayBtn();camEvId=null;updateCineCam();};
 $('camFree').onclick=()=>setCamMode('free');
 $('camTop').onclick=()=>{setCamMode('top');};
 addEventListener('keydown',e=>{
@@ -1782,6 +1791,7 @@ function frame(ms){
   if(curEvent&&perfTime>eventHideAt){$('eventCard').classList.remove('show');}
   if(perfTime>stratHideAt)$('stratFlash').classList.remove('show');
   applyDamage(simT);
+  updateCineCam();
   animOcean(perfTime);
   updateFleets(simT,perfTime,dt);
   stepStrikes(simT,dt);
