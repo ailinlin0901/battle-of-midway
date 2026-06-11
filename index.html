@@ -340,12 +340,13 @@ body.cine #legend{transform:translateX(115%);opacity:0}
     <button class="dbtn spd" data-spd="4">4×</button>
     <span class="dsep"></span>
     <button class="dbtn on" id="ccBtn" data-i18n="cc"></button>
+    <button class="dbtn on" id="musBtn" data-i18n="mus"></button>
     <span class="dsep"></span>
     <button class="dbtn cam on" id="camCine" data-i18n="camCine"></button>
     <button class="dbtn cam" id="camFree" data-i18n="camFree"></button>
     <button class="dbtn cam" id="camTop" data-i18n="camTop"></button>
     <span class="hint" data-i18n="deckHint"></span>
-    <span style="font-family:var(--font-mono);font-size:9px;color:var(--gold);letter-spacing:.1em">v1.5</span>
+    <span style="font-family:var(--font-mono);font-size:9px;color:var(--gold);letter-spacing:.1em">v1.6</span>
   </div>
 </div>
 
@@ -401,6 +402,7 @@ en:{
   deckHint:"SPACE play/pause · drag timeline to scrub",
   narrK:"LIVE COMMENTARY",
   cc:"CC ON",ccOff:"CC OFF",
+  mus:"♪ MUSIC ON",musOff:"♪ MUSIC OFF",
   stratLabel:"— TACTICAL DECISION —",
   scCmd:"Commander",scFleet:"Force",scStatus:"Status",scHP:"Integrity",
   usnavy:"U.S. PACIFIC FLEET",ijn:"IMPERIAL JAPANESE NAVY",
@@ -436,6 +438,7 @@ zh:{
   deckHint:"空白鍵 播放/暫停 · 拖曳時間軸快轉",
   narrK:"戰況解說",
   cc:"字幕 開",ccOff:"字幕 關",
+  mus:"♪ 音樂 開",musOff:"♪ 音樂 關",
   stratLabel:"— 計策發動 —",
   scCmd:"指揮官",scFleet:"所屬",scStatus:"狀態",scHP:"艦體完整度",
   usnavy:"美國太平洋艦隊",ijn:"日本帝國海軍",
@@ -1521,6 +1524,7 @@ function applyI18N(){
   buildPlaceLabels(); refreshShipLabels(); buildForcesPanel(); buildTicks(); updateClock();
   buildOutcomeLists();
   if(typeof ccOn!=='undefined'){curNarr=-99;refreshCcBtn();}
+  if(typeof musicOn!=='undefined')refreshMusBtn();
   if(curEvent)showEventCard(curEvent);
 }
 $('langBtn').onclick=()=>{LANG=LANG==='zh'?'en':'zh';applyI18N();};
@@ -1645,6 +1649,7 @@ function fireEvent(ev){
   firedEvents.add(ev.id);
   curEvent=ev; showEventCard(ev);
   eventHideAt=perfTime+11;
+  if(ev.type==='battle')musicBoostUntil=perfTime+9; // swell the score during combat
   if(ev.strat){
     $('sfName').textContent=ev.strat[LANG];
     $('sfEff').textContent=ev.eff[LANG];
@@ -1714,6 +1719,22 @@ document.querySelectorAll('.spd').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.spd').forEach(x=>x.classList.remove('on'));
   b.classList.add('on');speedMul=+b.dataset.spd;
 });
+/* ----- background music ----- */
+const music=new Audio('bgm.mp3'); music.loop=true; music.volume=0; music.preload='auto';
+let musicOn=true, musicStarted=false, musicBoostUntil=-1;
+const MUS_BASE=.55, MUS_BOOST=.9;
+function startMusic(){ if(musicStarted)return; musicStarted=true; music.play().catch(()=>{musicStarted=false;}); }
+function refreshMusBtn(){ $('musBtn').textContent=musicOn?T('mus'):T('musOff'); $('musBtn').classList.toggle('on',musicOn); }
+$('musBtn').onclick=()=>{ musicOn=!musicOn; startMusic(); refreshMusBtn(); };
+function stepMusic(dt){
+  if(!musicStarted)return;
+  let tgt=0; // fade to silence when toggled off or at the after-action report
+  if(musicOn&&!$('outcome').classList.contains('show'))
+    tgt=(perfTime<musicBoostUntil)?MUS_BOOST:MUS_BASE;
+  const k=Math.min(1,dt*(tgt>music.volume?.8:.45)); // fade-in ~2.5s, fade-out ~4s
+  music.volume+=(tgt-music.volume)*k;
+}
+
 /* ----- narration subtitles ----- */
 let ccOn=true, curNarr=-99;
 function refreshCcBtn(){
@@ -1740,10 +1761,12 @@ addEventListener('keydown',e=>{
 });
 $('btnAuto').onclick=()=>{
   $('intro').classList.add('gone');
+  startMusic();
   playing=true;setCamMode('cine');updatePlayBtn();
 };
 $('btnFree').onclick=()=>{
   $('intro').classList.add('gone');
+  startMusic();
   playing=true;setCamMode('free');syncOrbitFromCam();updatePlayBtn();
 };
 $('btnReplay').onclick=()=>{
@@ -1805,6 +1828,7 @@ function frame(ms){
   }
   stepFx(dt);
   stepCamera(dt,perfTime);
+  stepMusic(dt);
   updateLabels();
   updateDomLabels();
   updateNarr();
